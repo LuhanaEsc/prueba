@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Minicompilador Médico - Análisis completo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>🏥 Minicompilador Médico</h1>
+    <div class="descripcion">
+        <p>Este programa es una aplicación web con <strong>Flask</strong> que simula un compilador de tres fases. Recibe un archivo <code>.txt</code> con datos del paciente, lo analiza léxicamente (reconociendo tokens mediante AFDs), sintácticamente (presencia de todos los campos) y semánticamente (validaciones de rango, formato, etc.). A continuación se muestran todos los autómatas y el árbol sintáctico.</p>
+    </div>
+
+    <div class="contenedor">
+        <!-- Columna izquierda: formulario + ejemplo -->
+        <div class="columna-izquierda">
+            <div class="campo">
+                <label>📄 Seleccione archivo .txt con los datos del paciente</label>
+                <form method="POST" enctype="multipart/form-data" style="margin:0; padding:0; background:transparent;">
+                    <input type="file" name="archivo" accept=".txt" required>
+                    <button type="submit">🔍 Compilar desde archivo</button>
+                </form>
+            </div>
+            <div class="ejemplo-formato">
+                <strong>📝 Formato esperado del archivo .txt:</strong>
+                <pre>
+Nombre: Juan
+Apellido: Pérez
+DNI: 12345678
+Edad: 30
+Diagnóstico: J00
+Fecha: 2025-06-10
+Hora: 09:15
+Hospital/Clínica: Clínica Santa María
+Laboratorio: Lab Central
+Salón: MI-P2-103
+Exámenes: Hemograma, Perfil lipídico
+Enfermera/Médico: Dra. Patricia López
+Tipo de sangre: A+</pre>
+                <small>Todos los campos son obligatorios.</small>
+            </div>
+        </div>
+
+        <!-- Columna derecha: análisis completo generado dinámicamente -->
+        <div class="analisis-container">
+            <h3>📚 Análisis del compilador</h3>
+            <div id="contenido-analisis"></div>
+        </div>
+    </div>
+
+    <!-- Resultado del compilador (se mantiene igual) -->
+    <div class="resultado">
+        {% if mensaje_error_general %}
+            <div class="error-general">
+                <strong>⚠️ Error:</strong> {{ mensaje_error_general }}
+            </div>
+        {% endif %}
+        {% if resultado %}
+            {% if resultado.exito %}
+                <h3 style="color:green;">✔ Compilación exitosa</h3>
+                <p>
+                    <strong>Paciente:</strong> {{ resultado.nombre }} {{ resultado.apellido }}<br>
+                    <strong>DNI:</strong> {{ resultado.dni }}<br>
+                    <strong>Edad:</strong> {{ resultado.edad }}<br>
+                    <strong>Diagnóstico:</strong> {{ resultado.diagnostico_nombre }} ({{ resultado.codigo }})<br>
+                    <strong>Fecha:</strong> {{ resultado.fecha }}<br>
+                    <strong>Hora:</strong> {{ resultado.hora }}<br>
+                    <strong>Hospital/Clínica:</strong> {{ resultado.hospital_clinica }}<br>
+                    <strong>Laboratorio:</strong> {{ resultado.laboratorio }}<br>
+                    <strong>Salón:</strong> {{ resultado.salon }}<br>
+                    <strong>Exámenes:</strong> {{ resultado.examenes }}<br>
+                    <strong>Enfermera/Médico:</strong> {{ resultado.enfermera_medico }}<br>
+                    <strong>Tipo de sangre:</strong> {{ resultado.tipo_sangre }}
+                </p>
+                <b>Token generado para diagnóstico:</b> {{ resultado.token }}
+            {% else %}
+                <h3 style="color:#c0392b;">✘ Errores encontrados</h3>
+                {% if resultado.errores["LÉXICO"] %}
+                    <b>🔤 Errores léxicos:</b>
+                    <ul>{% for e in resultado.errores["LÉXICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if resultado.errores["SINTÁCTICO"] %}
+                    <b>🏗️ Errores sintácticos:</b>
+                    <ul>{% for e in resultado.errores["SINTÁCTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if resultado.errores["SEMÁNTICO"] %}
+                    <b>📖 Errores semánticos:</b>
+                    <ul>{% for e in resultado.errores["SEMÁNTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script>
+        // Datos de los AFDs y del árbol sintáctico
+        const afds = [
+            {
+                nombre: "CODIGO_MEDICO",
+                formato: "[A-Z][0-9]{2}",
+                descripcion: "Estados: q0 → q1 → q2 → q3 (aceptación)",
+                diagrama: `
+┌─────┐ A-Z   ┌─────┐ 0-9   ┌─────┐ 0-9   ┌─────┐
+│  q0 │ ────→ │  q1 │ ────→ │  q2 │ ────→ │  q3 │ (aceptación)
+└─────┘       └─────┘       └─────┘       └─────┘
+  │                                         │
+  │ otro                                     │ otro
+  ▼                                         ▼
+┌─────┐                                   ┌─────┐
+│error│                                   │error│
+└─────┘                                   └─────┘`,
+                graphviz: `digraph AFD_CODIGO {
+    rankdir=LR;
+    q0 [label="q0"]; q1 [label="q1"]; q2 [label="q2"];
+    q3 [label="q3", shape=doublecircle];
+    error [label="q_error"];
+    q0 -> q1 [label="[A-Z]"];
+    q0 -> error [label="otro"];
+    q1 -> q2 [label="[0-9]"];
+    q1 -> error [label="otro"];
+    q2 -> q3 [label="[0-9]"];
+    q2 -> error [label="otro"];
+    q3 -> error [label="cualquier símbolo"];
+}`
+            },
+            {
+                nombre: "FECHA",
+                formato: "YYYY-MM-DD",
+                descripcion: "q0 →(4 dígitos)→ q4 → '-' → q5 →(2 dígitos)→ q7 → '-' → q8 →(2 dígitos)→ q9 (aceptación)",
+                diagrama: "q0 --[0-9]--> q1 --[0-9]--> q2 --[0-9]--> q3 --[0-9]--> q4 --'-'--> q5 --[0-9]--> q6 --[0-9]--> q7 --'-'--> q8 --[0-9]--> q9",
+                graphviz: `digraph AFD_FECHA {
+    rankdir=LR;
+    q0,q1,q2,q3,q4,q5,q6,q7,q8 [shape=circle];
+    q9 [shape=doublecircle];
+    q0 -> q1 [label="[0-9]"]; q1 -> q2 [label="[0-9]"];
+    q2 -> q3 [label="[0-9]"]; q3 -> q4 [label="[0-9]"];
+    q4 -> q5 [label="'-'"];   q5 -> q6 [label="[0-9]"];
+    q6 -> q7 [label="[0-9]"]; q7 -> q8 [label="'-'"];
+    q8 -> q9 [label="[0-9]"];
+}`
+            },
+            {
+                nombre: "HORA",
+                formato: "HH:MM (24h)",
+                descripcion: "q0 →(0-1 o 2)→ q2 → ':' → q3 →(0-5)→ q4 →(0-9)→ aceptación",
+                diagrama: "q0 --[0-1]--> q1a --[0-9]--> q2\nq0 --'2'--> q1b --[0-3]--> q2\nq2 --':'--> q3 --[0-5]--> q4 --[0-9]--> q5",
+                graphviz: `digraph AFD_HORA {
+    rankdir=LR;
+    q0,q1a,q1b,q2,q3,q4 [shape=circle];
+    q5 [shape=doublecircle];
+    q0 -> q1a [label="[0-1]"]; q0 -> q1b [label="'2'"];
+    q1a -> q2 [label="[0-9]"]; q1b -> q2 [label="[0-3]"];
+    q2 -> q3 [label="':'"];    q3 -> q4 [label="[0-5]"];
+    q4 -> q5 [label="[0-9]"];
+}`
+            },
+            {
+                nombre: "NUMERO",
+                formato: "uno o más dígitos",
+                diagrama: "┌─────┐ [0-9]   ┌─────────┐\n│  q0 │ ──────→ │  q1     │ (aceptación) ──[0-9]──┐\n└─────┘         └─────────┘   ←───────────────────┘",
+                graphviz: `digraph AFD_NUMERO {
+    rankdir=LR;
+    q0 [shape=circle];
+    q1 [shape=doublecircle];
+    q0 -> q1 [label="[0-9]"];
+    q1 -> q1 [label="[0-9]"];
+}`
+            },
+            {
+                nombre: "TIPO_SANGRE",
+                formato: "(A|B|AB|O)[+-]",
+                diagrama: "q0 --'A'|'B'|'O'|'AB'--> q1 --'+'|'-'--> q2 (aceptación)",
+                graphviz: `digraph AFD_TIPO_SANGRE {
+    rankdir=LR;
+    q0 [shape=circle];
+    q1 [shape=circle];
+    q2 [shape=doublecircle];
+    q0 -> q1 [label="'A' | 'B' | 'O' | 'AB'"];
+    q1 -> q2 [label="'+' | '-'"];
+}`
+            },
+            {
+                nombre: "CADENA",
+                formato: "texto alfabético, espacios y puntuación",
+                diagrama: "┌─────────┐\n│    q0   │ (inicial y aceptación) ────[alfabeto]────┐\n│ (acept.)│   ←─────────────────────────────────────┘\n└─────────┘",
+                graphviz: `digraph AFD_CADENA {
+    rankdir=LR;
+    q0 [shape=doublecircle];
+    q0 -> q0 [label="[A-Za-zÁÉÍÓÚÑáéíóúñ\\s\\.,\\-]"];
+}`
+            },
+            {
+                nombre: "ID_CAMPO",
+                formato: "identificador (sin espacios)",
+                diagrama: "┌─────────┐\n│    q0   │ (aceptación) ────[A-Za-zÁÉÍÓÚÑáéíóúñ/]───┐\n│         │   ←─────────────────────────────────────────┘\n└─────────┘",
+                graphviz: `digraph AFD_ID_CAMPO {
+    rankdir=LR;
+    q0 [shape=doublecircle];
+    q0 -> q0 [label="[A-Za-zÁÉÍÓÚÑáéíóúñ/]"];
+}`
+            }
+        ];
+
+        const tablaTokens = `
+            <p>▸ TABLA DE TOKENS (expresiones regulares completas)</p>
+            <table>
+                <thead><tr><th>Categoría</th><th>Token</th><th>Expresión regular</th><th>Ejemplo</th></tr></thead>
+                <tbody>
+                    <tr><td rowspan="5"><b>Identificadores<br>y literales</b></td><td><code>ID_CAMPO</code></td><td><code>[A-Za-zÁÉÍÓÚÑáéíóúñ/]+</code></td><td>Nombre, Hospital/Clínica</td></tr>
+                    <tr><td><code>CADENA</code></td><td><code>[A-Za-zÁÉÍÓÚÑáéíóúñ\\s\\.\\,\\-]+</code></td><td>Juan, Clínica Santa María</td></tr>
+                    <tr><td><code>NUMERO</code></td><td><code>[0-9]+</code></td><td>30, 12345678</td></tr>
+                    <tr><td><code>CODIGO_MEDICO</code></td><td><code>[A-Z][0-9]{2}</code></td><td>J00, E10</td></tr>
+                    <tr><td><code>TIPO_SANGRE</code></td><td><code>(A|B|AB|O)[+-]</code></td><td>A+, O-</td></tr>
+                    <tr><td rowspan="2"><b>Fecha y hora</b></td><td><code>FECHA</code></td><td><code>[0-9]{4}-[0-9]{2}-[0-9]{2}</code></td><td>2025-06-10</td></tr>
+                    <tr><td><code>HORA</code></td><td><code>([01][0-9]|2[0-3]):[0-5][0-9]</code></td><td>09:15</td></tr>
+                    <tr><td rowspan="2"><b>Delimitadores</b></td><td><code>DOS_PUNTOS</code></td><td><code>:</code></td><td>:</td></tr>
+                    <tr><td><code>NUEVA_LINEA</code></td><td><code>\\n</code></td><td>salto de línea</td></tr>
+                    <tr><td rowspan="3"><b>Control y error</b></td><td><code>TOKEN_VACIO</code></td><td><code>^$</code></td><td>campo vacío</td></tr>
+                    <tr><td><code>ERROR_LEXICO</code></td><td><code>.*</code></td><td>formato inválido</td></tr>
+                    <tr><td><code>EOF</code></td><td><code>\\0</code></td><td>fin del archivo</td></tr>
+                </tbody>
+            </table>
+        `;
+
+        const arbolSintactico = `
+            <div class="arbol">
+                <pre>
+PACIENTE
+├─ CAMPO (Nombre)
+│  ├─ ID_CAMPO "Nombre"
+│  └─ VALOR → CADENA "Juan"
+├─ CAMPO (Apellido) ... (resto de campos)
+└─ CAMPO (Tipo de sangre)
+   ├─ ID_CAMPO "Tipo de sangre"
+   └─ VALOR → TIPO_SANGRE "A+"
+                </pre>
+            </div>
+            <p><strong>Código Graphviz para el árbol completo:</strong> <a href="https://dreampuf.github.io/GraphvizOnline/" target="_blank">Ver online</a></p>
+            <pre class="graphviz-code">
+digraph ArbolSintactico {
+    node [shape=box, style=filled, fillcolor=lightblue];
+    "PACIENTE" -> {"CAMPO1" "CAMPO2" ... "CAMPO13"};
+    "CAMPO1" -> {"ID: Nombre" "VALOR: Juan"};
+    ...
+}
+            </pre>
+        `;
+
+        function generarHTML() {
+            let html = `
+                <!-- Fase 1: Léxico -->
+                <div class="fase">
+                    <h4><span>1</span> Análisis Léxico - Tokens y AFDs</h4>
+                    <div class="reglas">
+                        ${tablaTokens}
+                        <p style="margin-top:20px;"><strong>🔍 AUTÓMATAS FINITOS DETERMINISTAS (AFD) PARA CADA TOKEN</strong></p>
+            `;
+            for (const afd of afds) {
+                html += `
+                    <div class="afd-item">
+                        <h5>📌 AFD para <code>${afd.nombre}</code> (${afd.formato})</h5>
+                        <p>${afd.descripcion || ""}</p>
+                        <pre>${afd.diagrama}</pre>
+                        <p><strong>Graphviz code:</strong></p>
+                        <pre class="graphviz-code">${afd.graphviz}</pre>
+                    </div>
+                `;
+            }
+            html += `
+                    </div>
+                </div>
+                <!-- Fase 2: Sintáctico -->
+                <div class="fase">
+                    <h4><span>2</span> Análisis Sintáctico y Árbol</h4>
+                    <div class="reglas">
+                        <p>▸ GRAMÁTICA LIBRE DE CONTEXTO</p>
+                        <pre>
+PACIENTE  → CAMPOS
+CAMPOS    → CAMPO CAMPOS | ε
+CAMPO     → ID_CAMPO DOS_PUNTOS VALOR
+VALOR     → CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE
+                        </pre>
+                        <p><strong>🌳 ÁRBOL SINTÁCTICO</strong></p>
+                        ${arbolSintactico}
+                    </div>
+                </div>
+                <!-- Fase 3: Traducción -->
+                <div class="fase">
+                    <h4><span>3</span> Traducción (código Python)</h4>
+                    <div class="reglas">
+                        <p>▸ GENERACIÓN DE CÓDIGO</p>
+                        <ul>
+                            <li>Se construye un diccionario con los datos validados.</li>
+                            <li>Se aplican expresiones regulares para validar formato de campos.</li>
+                            <li>Se busca el diagnóstico en el diccionario CIE-10 y se decodifica.</li>
+                            <li>Salida: mensaje de éxito o lista de errores clasificados.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="validaciones">
+                    <p><strong>✅ Validaciones semánticas adicionales:</strong></p>
+                    <ul>
+                        <li>Edad: entero entre 0 y 120</li>
+                        <li>DNI: exactamente 8 dígitos numéricos</li>
+                        <li>Diagnóstico: código debe existir en el diccionario CIE-10</li>
+                        <li>Salón: formato ESPECIALIDAD-P[PISO]-[NUMERO] (MI, CIR, PED, GO; piso 1-10, número 1-999)</li>
+                        <li>Fecha: válida en formato YYYY-MM-DD</li>
+                        <li>Hora: válida en formato HH:MM (24h)</li>
+                        <li>Tipo de sangre: A+, A-, B+, B-, AB+, AB-, O+, O-</li>
+                    </ul>
+                </div>
+            `;
+            document.getElementById("contenido-analisis").innerHTML = html;
+        }
+        generarHTML();
+    </script>
+</body>
+</html>
