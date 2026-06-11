@@ -190,7 +190,7 @@
     </style>
 </head>
 <body>
-    <h1>🏥 Minicompilador Médico</h1>
+    <h1>Minicompilador Médico</h1>
     <div class="descripcion">
         <p>Este programa es una aplicación web con <strong>Flask</strong> que simula un compilador de tres fases. Recibe un archivo <code>.txt</code> con datos del paciente, lo analiza léxicamente (reconociendo tokens mediante AFDs), sintácticamente (presencia de todos los campos) y semánticamente (validaciones de rango, formato, etc.). A continuación se muestran todos los autómatas y el árbol sintáctico.</p>
     </div>
@@ -199,14 +199,14 @@
         <!-- Columna izquierda: formulario + ejemplo -->
         <div class="columna-izquierda">
             <div class="campo">
-                <label>📄 Seleccione archivo .txt con los datos del paciente</label>
+                <label>Seleccione archivo .txt con los datos del paciente</label>
                 <form method="POST" enctype="multipart/form-data">
                     <input type="file" name="archivo" accept=".txt" required>
                     <button type="submit">🔍 Compilar desde archivo</button>
                 </form>
             </div>
             <div class="ejemplo-formato">
-                <strong>📝 Formato esperado del archivo .txt:</strong>
+                <strong>Formato esperado del archivo .txt:</strong>
                 <div class="ejemplo-pre">
 Nombre: Juan
 Apellido: Pérez
@@ -228,7 +228,7 @@ Tipo de sangre: A+
 
         <!-- Columna derecha: análisis completo generado dinámicamente -->
         <div class="analisis-container">
-            <h3>📚 Análisis del compilador</h3>
+            <h3>Análisis del compilador</h3>
             <div id="contenido-analisis"></div>
         </div>
     </div>
