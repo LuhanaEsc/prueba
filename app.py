@@ -29,7 +29,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "CODIGO_MEDICO": {
             "DFA": """digraph AFD_CODIGO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2"];
@@ -45,7 +45,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
 }""",
             "NFA": """digraph AFN_CODIGO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2"];
@@ -60,7 +60,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "FECHA": {
             "DFA": """digraph AFD_FECHA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2"];
@@ -83,7 +83,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
 }""",
             "NFA": """digraph AFN_FECHA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2"];
@@ -110,7 +110,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "HORA": {
             "DFA": """digraph AFD_HORA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1a [label="q1a"];
     q1b [label="q1b"];
@@ -128,7 +128,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
 }""",
             "NFA": """digraph AFN_HORA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1a [label="q1a"];
     q1b [label="q1b"];
@@ -150,7 +150,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "NUMERO": {
             "DFA": """digraph AFD_NUMERO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1" shape=doublecircle fillcolor=lightgreen style=filled];
     q0 -> q1 [label="[0-9]"];
@@ -158,7 +158,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
 }""",
             "NFA": """digraph AFN_NUMERO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2" shape=doublecircle fillcolor=lightyellow style=filled];
@@ -171,7 +171,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "TIPO_SANGRE": {
             "DFA": """digraph AFD_TIPO_SANGRE {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2" shape=doublecircle fillcolor=lightgreen style=filled];
@@ -180,7 +180,7 @@ def generar_dot_afd(tipo_token, version="DFA"):
 }""",
             "NFA": """digraph AFN_TIPO_SANGRE {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2" shape=doublecircle fillcolor=lightyellow style=filled];
@@ -193,13 +193,13 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "CADENA": {
             "DFA": """digraph AFD_CADENA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0" shape=doublecircle fillcolor=lightgreen style=filled];
     q0 -> q0 [label="[A-Za-z .,\\\\-]"];
 }""",
             "NFA": """digraph AFN_CADENA {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0" shape=doublecircle fillcolor=lightyellow style=filled];
     q0 -> q0 [label="[A-Za-z .,\\\\-]"];
     q0 -> q0 [label="eps" style=dashed];
@@ -208,13 +208,13 @@ def generar_dot_afd(tipo_token, version="DFA"):
         "ID_CAMPO": {
             "DFA": """digraph AFD_ID_CAMPO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0" shape=doublecircle fillcolor=lightgreen style=filled];
     q0 -> q0 [label="[A-Za-z/]"];
 }""",
             "NFA": """digraph AFN_ID_CAMPO {
     rankdir=LR;
-    node [shape=circle fontname="Helvetica"];
+    node [shape=circle fontname="Helvetica" style=filled fillcolor=white];
     q0 [label="q0" shape=doublecircle fillcolor=lightyellow style=filled];
     q0 -> q0 [label="[A-Za-z/]"];
     q0 -> q0 [label="eps" style=dashed];
