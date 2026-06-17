@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Minicompilador Medico</title>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2.14.0/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@1.20.0/dist/index.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -499,35 +499,31 @@ VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            async function renderizarGrafos() {
-                try {
-                    // API correcta para @hpcc-js/wasm v2.x
-                    const graphviz = await hpccWasm.Graphviz.load();
+            // @hpcc-js/wasm v1 necesita saber dónde está el .wasm
+            hpccWasm.wasmFolder("https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@1.20.0/dist/");
 
-                    const containers = document.querySelectorAll('.graph-container[data-dot]');
-                    for (const container of containers) {
-                        const dot = container.getAttribute('data-dot');
-                        if (!dot || dot.trim() === '') {
-                            container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
-                            continue;
-                        }
-                        try {
-                            const svg = await graphviz.layout(dot.trim(), "svg", "dot");
-                            container.innerHTML = svg;
-                            const svgEl = container.querySelector('svg');
-                            if (svgEl) {
-                                svgEl.removeAttribute('width');
-                                svgEl.removeAttribute('height');
-                                svgEl.style.maxWidth = '100%';
-                                svgEl.style.height = 'auto';
-                            }
-                        } catch (err) {
-                            console.error('Error renderizando grafo:', err);
-                            container.innerHTML = '<span class="graph-error">&#x274C; Error al renderizar grafo</span>';
-                        }
+            async function renderizarGrafos() {
+                const containers = document.querySelectorAll('.graph-container[data-dot]');
+                for (const container of containers) {
+                    const dot = container.getAttribute('data-dot');
+                    if (!dot || dot.trim() === '') {
+                        container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
+                        continue;
                     }
-                } catch (err) {
-                    console.error('Error cargando Graphviz WASM:', err);
+                    try {
+                        const svg = await hpccWasm.graphviz.layout(dot.trim(), "svg", "dot");
+                        container.innerHTML = svg;
+                        const svgEl = container.querySelector('svg');
+                        if (svgEl) {
+                            svgEl.removeAttribute('width');
+                            svgEl.removeAttribute('height');
+                            svgEl.style.maxWidth = '100%';
+                            svgEl.style.height = 'auto';
+                        }
+                    } catch (err) {
+                        console.error('Error renderizando grafo:', err, '\nDOT:\n' + dot);
+                        container.innerHTML = '<span class="graph-error">&#x274C; Error: ' + err.message + '</span>';
+                    }
                 }
             }
 
