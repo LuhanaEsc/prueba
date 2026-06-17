@@ -3,50 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Minicompilador Médico</title>
+    <title>Minicompilador Medico</title>
     <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2.14.0/dist/index.min.js"></script>
     <style>
-        /* (Mantén los mismos estilos que antes) */
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #1a2a3a; }
-        h1 { color: #1e466e; border-left: 5px solid #27ae60; padding-left: 15px; }
-        .descripcion { background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 25px; }
-        .contenedor { display: flex; gap: 30px; flex-wrap: wrap; margin: 30px 0; }
-        .columna-izquierda { flex: 1; background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 25px; min-width: 280px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background: #f0f2f5;
+            color: #1a2a3a;
+        }
+        h1 {
+            color: #1e466e;
+            border-left: 5px solid #27ae60;
+            padding-left: 15px;
+        }
+        .descripcion {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        .contenedor {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        .columna-izquierda {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            min-width: 280px;
+        }
         .campo { margin-bottom: 20px; }
-        label { font-weight: bold; display: block; margin-bottom: 8px; font-size: 1.1rem; }
-        input[type="file"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #fafafa; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
         button:hover { background: #1e8449; }
-        .ejemplo-formato { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
-        .ejemplo-pre { background: #f4f7f6; padding: 12px; border-radius: 8px; border-left: 4px solid #27ae60; font-family: monospace; white-space: pre; overflow-x: auto; margin: 10px 0; line-height: 1.5; }
-        .analisis-container { flex: 1.2; background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 25px; min-width: 550px; }
+        .ejemplo-formato {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .ejemplo-pre {
+            background: #f4f7f6;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 10px 0;
+            line-height: 1.5;
+            font-size: 0.85rem;
+        }
+        .analisis-container {
+            flex: 1.2;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            min-width: 550px;
+        }
         .fase { margin-bottom: 35px; }
-        .fase h4 { font-size: 1.3rem; color: #27ae60; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
-        .fase h4 span { background: #27ae60; color: white; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9rem; }
-        .reglas { background: #f8f9fa; padding: 12px 20px; border-radius: 12px; margin: 15px 0; }
-        .reglas table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .reglas td, .reglas th { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+        .fase h4 {
+            font-size: 1.3rem;
+            color: #27ae60;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fase h4 span {
+            background: #27ae60;
+            color: white;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.9rem;
+        }
+        .reglas {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        .reglas table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .reglas td, .reglas th {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
         .reglas th { background: #e9ecef; }
-        .afd-item { background: #fff3e0; margin: 15px 0; padding: 15px; border-radius: 10px; border-left: 5px solid #f39c12; }
-        .afd-item h5 { margin: 0 0 8px 0; color: #e67e22; }
-        .afd-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 10px; }
-        .afd-col { flex: 1; min-width: 300px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .afd-col h6 { margin: 0 0 8px 0; color: #2c3e50; text-align: center; }
-        pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 8px 0; }
-        .arbol { background: #e8f8f5; padding: 10px; border-radius: 10px; }
-        .validaciones { background: #fef9e6; padding: 10px 15px; border-radius: 10px; border-left: 4px solid #f39c12; margin-top: 15px; }
-        .resultado { margin-top: 30px; padding: 20px; border-radius: 16px; background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); line-height: 1.6; }
-        .error-general { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 10px; margin-bottom: 20px; }
+        .afd-item {
+            background: #fff3e0;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #f39c12;
+        }
+        .afd-item h5 {
+            margin: 0 0 8px 0;
+            color: #e67e22;
+        }
+        .afd-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .afd-col {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .afd-col h6 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 8px 0;
+        }
+        .arbol {
+            background: #e8f8f5;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .validaciones {
+            background: #fef9e6;
+            padding: 10px 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f39c12;
+            margin-top: 15px;
+        }
+        .resultado {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+        .error-general {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
         ul { margin-top: 5px; margin-bottom: 10px; }
-        .graph-container svg { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; background: white; padding: 10px; box-sizing: border-box; }
-        .graph-container { margin: 10px 0; overflow: auto; }
+
+        /* ===== ESTILOS PARA LOS GRAFOS SVG ===== */
+        .graph-container {
+            margin: 10px 0;
+            overflow: auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .graph-container svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .graph-loading {
+            color: #888;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        .graph-error {
+            color: #c0392b;
+            font-size: 0.85rem;
+            font-family: monospace;
+            padding: 8px;
+            background: #fff5f5;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        /* ======================================= */
+
+        .estado-ok { color: green; }
+        .estado-error { color: red; }
     </style>
 </head>
 <body>
-    <h1>🩺 Minicompilador Médico</h1>
+    <h1>&#x1F4CB; Minicompilador Medico</h1>
     <div class="descripcion">
-        <p>Este programa es una aplicación web con <strong>Flask</strong> que simula un compilador de tres fases. Recibe un archivo <code>.txt</code> con datos del paciente, lo analiza léxicamente (reconociendo tokens mediante AFDs), sintácticamente (presencia de todos los campos) y semánticamente (validaciones de rango, formato, etc.). A continuación se muestran todos los autómatas y el árbol sintáctico.</p>
+        <p>Este programa es una aplicacion web con <strong>Flask</strong> que simula un compilador de tres fases. Recibe un archivo <code>.txt</code> con datos del paciente, lo analiza lexicamente (reconociendo tokens mediante AFDs), sintacticamente (presencia de todos los campos) y semanticamente (validaciones de rango, formato, etc.).</p>
     </div>
 
     <div class="contenedor">
@@ -56,38 +247,37 @@
                 <label>Seleccione archivo .txt con los datos del paciente</label>
                 <form method="POST" enctype="multipart/form-data">
                     <input type="file" name="archivo" accept=".txt" required>
-                    <button type="submit">🔍 Compilar desde archivo</button>
+                    <button type="submit">&#x1F50D; Compilar desde archivo</button>
                 </form>
             </div>
             <div class="ejemplo-formato">
                 <strong>Formato esperado del archivo .txt:</strong>
-                <div class="ejemplo-pre">
-Nombre: Juan
-Apellido: Pérez
+                <div class="ejemplo-pre">Nombre: Juan
+Apellido: Perez
 DNI: 12345678
 Edad: 30
-Diagnóstico: J00
+Diagnostico: J00
 Fecha: 2025-06-10
 Hora: 09:15
-Hospital/Clínica: Clínica Santa María
+Hospital/Clinica: Clinica Santa Maria
 Laboratorio: Lab Central
-Salón: MI-P2-103
-Exámenes: Hemograma, Perfil lipídico
-Enfermera/Médico: Dra. Patricia López
-Tipo de sangre: A+
-                </div>
+Salon: MI-P2-103
+Examenes: Hemograma, Perfil lipidico
+Enfermera/Medico: Dra. Patricia Lopez
+Tipo de sangre: A+</div>
                 <small>Todos los campos son obligatorios.</small>
             </div>
         </div>
 
-        <!-- Columna derecha: análisis dinámico o teoría estática -->
+        <!-- Columna derecha: analisis -->
         <div class="analisis-container">
-            <h3>Análisis del compilador</h3>
+            <h3>Analisis del compilador</h3>
             <div id="contenido-analisis">
                 {% if tokens_por_campo %}
-                    <!-- ANÁLISIS LÉXICO -->
+
+                    <!-- ANALISIS LEXICO -->
                     <div class="fase">
-                        <h4><span>1</span> Análisis Léxico - Tokens generados</h4>
+                        <h4><span>1</span> Analisis Lexico - Tokens generados</h4>
                         <div class="reglas">
                             <p><strong>Tabla de tokens (por campo):</strong></p>
                             {% for campo, lista_tokens in tokens_por_campo.items() %}
@@ -101,7 +291,7 @@ Tipo de sangre: A+
                                             <td><code>{{ tk.valor }}</code></td>
                                             <td>
                                                 {% if tk.estados %}
-                                                    {{ tk.estados | join(' → ') }}
+                                                    {{ tk.estados | join(' -> ') }}
                                                 {% else %}
                                                     -
                                                 {% endif %}
@@ -114,7 +304,7 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- AFDs -->
+                    <!-- AFDs DETERMINISTAS Y NO DETERMINISTAS -->
                     <div class="fase">
                         <h4><span>1b</span> AFDs (Deterministas y No Deterministas)</h4>
                         <div class="reglas">
@@ -122,19 +312,23 @@ Tipo de sangre: A+
                                 {% for tk in lista_tokens %}
                                     {% if tk.dot_dfa or tk.dot_nfa %}
                                         <div class="afd-item">
-                                            <h5>Token <code>{{ tk.tipo }}</code> (valor: {{ tk.valor }})</h5>
-                                            <p><strong>Secuencia de estados:</strong> {{ tk.estados | join(' → ') }}</p>
+                                            <h5>Token <code>{{ tk.tipo }}</code> — valor: {{ tk.valor }}</h5>
+                                            <p><strong>Secuencia de estados:</strong> {{ tk.estados | join(' -> ') }}</p>
                                             <div class="afd-row">
                                                 {% if tk.dot_dfa %}
                                                     <div class="afd-col">
-                                                        <h6>🔵 AFD Determinista</h6>
-                                                        <div class="graph-container" data-dot="{{ tk.dot_dfa | safe }}"></div>
+                                                        <h6>&#x1F535; AFD Determinista</h6>
+                                                        <div class="graph-container" data-dot="{{ tk.dot_dfa | e }}">
+                                                            <span class="graph-loading">Cargando grafo...</span>
+                                                        </div>
                                                     </div>
                                                 {% endif %}
                                                 {% if tk.dot_nfa %}
                                                     <div class="afd-col">
-                                                        <h6>🟠 AFD No Determinista (AFN)</h6>
-                                                        <div class="graph-container" data-dot="{{ tk.dot_nfa | safe }}"></div>
+                                                        <h6>&#x1F7E0; AFN No Determinista</h6>
+                                                        <div class="graph-container" data-dot="{{ tk.dot_nfa | e }}">
+                                                            <span class="graph-loading">Cargando grafo...</span>
+                                                        </div>
                                                     </div>
                                                 {% endif %}
                                             </div>
@@ -145,35 +339,37 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ÁRBOL -->
+                    <!-- ARBOL SINTACTICO -->
                     <div class="fase">
-                        <h4><span>2</span> Análisis Sintáctico - Árbol con valores</h4>
+                        <h4><span>2</span> Analisis Sintactico - Arbol con valores</h4>
                         <div class="reglas">
-                            <div class="graph-container" data-dot="{{ arbol_dot | safe }}"></div>
+                            <div class="graph-container" data-dot="{{ arbol_dot | e }}">
+                                <span class="graph-loading">Cargando arbol...</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- TRADUCCIÓN -->
+                    <!-- TRADUCCION -->
                     <div class="fase">
-                        <h4><span>3</span> Traducción (código Python)</h4>
+                        <h4><span>3</span> Traduccion (codigo Python)</h4>
                         <div class="reglas">
                             <ul>
                                 <li>Diccionario con datos validados</li>
                                 <li>Expresiones regulares para formatos</li>
-                                <li>Búsqueda en diccionario CIE-10</li>
-                                <li>Salida: éxito o errores clasificados</li>
+                                <li>Busqueda en diccionario CIE-10</li>
+                                <li>Salida: exito o errores clasificados</li>
                             </ul>
                         </div>
                     </div>
 
-                    <!-- VALIDACIONES -->
+                    <!-- VALIDACIONES SEMANTICAS -->
                     <div class="validaciones">
-                        <p><strong>✅ Validaciones semánticas:</strong></p>
+                        <p><strong>Validaciones semanticas:</strong></p>
                         <ul>
                             <li>Edad: 0-120</li>
-                            <li>DNI: 8 dígitos</li>
-                            <li>Diagnóstico: existe en CIE-10</li>
-                            <li>Salón: MI|CIR|PED|GO-P[1-10]-[1-999]</li>
+                            <li>DNI: 8 digitos</li>
+                            <li>Diagnostico: existe en CIE-10</li>
+                            <li>Salon: MI|CIR|PED|GO-P[1-10]-[1-999]</li>
                             <li>Fecha: YYYY-MM-DD</li>
                             <li>Hora: HH:MM (24h)</li>
                             <li>Tipo sangre: A+,A-,B+,B-,AB+,AB-,O+,O-</li>
@@ -181,138 +377,148 @@ Tipo de sangre: A+
                     </div>
 
                 {% else %}
-                    <!-- TEORÍA ESTÁTICA (carga inicial) -->
+                    <!-- TEORIA ESTATICA (carga inicial) -->
                     <div class="fase">
-                        <h4><span>1</span> Análisis Léxico - Tokens y AFDs</h4>
+                        <h4><span>1</span> Analisis Lexico - Tokens y AFDs</h4>
                         <div class="reglas">
-                            <p>▸ TABLA DE TOKENS (teórica)</p>
+                            <p>&#x25B8; TABLA DE TOKENS (teorica)</p>
                             <table>
-                                <thead><tr><th>Categoría</th><th>Token</th><th>Expresión regular</th><th>Ejemplo</th></tr></thead>
+                                <thead><tr><th>Categoria</th><th>Token</th><th>Expresion regular</th><th>Ejemplo</th></tr></thead>
                                 <tbody>
-                                <tr><td rowspan="5"><b>Identificadores<br>y literales</b></td><td><code>ID_CAMPO</code></td><td><code>[A-Za-zÁÉÍÓÚÑáéíóúñ/]+</code></td><td>Nombre, Hospital/Clínica</td></tr>
-                                <tr><td><code>CADENA</code></td><td><code>[A-Za-zÁÉÍÓÚÑáéíóúñ\\s\\.\\,\\-]+</code></td><td>Juan, Clínica Santa María</td></tr>
+                                <tr><td rowspan="5"><b>Identificadores y literales</b></td><td><code>ID_CAMPO</code></td><td><code>[A-Za-z/]+</code></td><td>Nombre, Hospital/Clinica</td></tr>
+                                <tr><td><code>CADENA</code></td><td><code>[A-Za-z\s\.\,\-]+</code></td><td>Juan, Clinica Santa Maria</td></tr>
                                 <tr><td><code>NUMERO</code></td><td><code>[0-9]+</code></td><td>30, 12345678</td></tr>
                                 <tr><td><code>CODIGO_MEDICO</code></td><td><code>[A-Z][0-9]{2}</code></td><td>J00, E10</td></tr>
                                 <tr><td><code>TIPO_SANGRE</code></td><td><code>(A|B|AB|O)[+-]</code></td><td>A+, O-</td></tr>
                                 <tr><td rowspan="2"><b>Fecha y hora</b></td><td><code>FECHA</code></td><td><code>[0-9]{4}-[0-9]{2}-[0-9]{2}</code></td><td>2025-06-10</td></tr>
                                 <tr><td><code>HORA</code></td><td><code>([01][0-9]|2[0-3]):[0-5][0-9]</code></td><td>09:15</td></tr>
                                 <tr><td rowspan="2"><b>Delimitadores</b></td><td><code>DOS_PUNTOS</code></td><td><code>:</code></td><td>:</td></tr>
-                                <tr><td><code>NUEVA_LINEA</code></td><td><code>\\n</code></td><td>salto de línea</td></tr>
-                                <tr><td rowspan="3"><b>Control y error</b></td><td><code>TOKEN_VACIO</code></td><td><code>^$</code></td><td>campo vacío</td></tr>
-                                <tr><td><code>ERROR_LEXICO</code></td><td><code>.*</code></td><td>formato inválido</td></tr>
-                                <tr><td><code>EOF</code></td><td><code>\\0</code></td><td>fin del archivo</td></tr>
+                                <tr><td><code>NUEVA_LINEA</code></td><td><code>\n</code></td><td>salto de linea</td></tr>
+                                <tr><td rowspan="3"><b>Control y error</b></td><td><code>TOKEN_VACIO</code></td><td><code>^$</code></td><td>campo vacio</td></tr>
+                                <tr><td><code>ERROR_LEXICO</code></td><td><code>.*</code></td><td>formato invalido</td></tr>
+                                <tr><td><code>EOF</code></td><td><code>\0</code></td><td>fin del archivo</td></tr>
                                 </tbody>
                             </table>
-                            <p><strong>🔍 AUTÓMATAS FINITOS DETERMINISTAS (AFD) - teoría</strong></p>
-                            <div class="afd-item"><h5>📌 AFD para <code>CODIGO_MEDICO</code></h5><pre>┌─────┐ A-Z   ┌─────┐ 0-9   ┌─────┐ 0-9   ┌─────┐
-│  q0 │ ────→ │  q1 │ ────→ │  q2 │ ────→ │  q3 │ (aceptación)
-└─────┘       └─────┘       └─────┘       └─────┘</pre></div>
-                            <div class="afd-item"><h5>📌 AFD para <code>FECHA</code></h5><pre>┌─────┐ [0-9] ┌─────┐ [0-9] ┌─────┐ [0-9] ┌─────┐ [0-9] ┌─────┐
-│  q0 │ ────→ │ q1  │ ────→ │ q2  │ ────→ │ q3  │ ────→ │ q4  │
-└─────┘       └─────┘       └─────┘       └─────┘       └─────┘
-                                                          │
-                                                        '-' │
-                                                          ▼
-┌─────┐ [0-9] ┌─────┐ [0-9] ┌─────┐ '-'   ┌─────┐ [0-9] ┌─────┐
-│ q5  │ ────→ │ q6  │ ────→ │ q7  │ ────→ │ q8  │ ────→ │ q9  │ (aceptación)
-└─────┘       └─────┘       └─────┘       └─────┘       └─────┘</pre></div>
                         </div>
                     </div>
                     <div class="fase">
-                        <h4><span>2</span> Análisis Sintáctico y Árbol (genérico)</h4>
+                        <h4><span>2</span> Analisis Sintactico y Arbol (generico)</h4>
                         <div class="reglas">
-                            <p>▸ GRAMÁTICA</p>
-                            <pre>PACIENTE → CAMPOS
-CAMPOS → CAMPO CAMPOS | ε
-CAMPO → ID_CAMPO DOS_PUNTOS VALOR
-VALOR → CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
-                            <p><strong>🌳 ÁRBOL SINTÁCTICO (ejemplo genérico)</strong></p>
-                            <div class="arbol"><pre>
-PACIENTE
-├─ CAMPO (Nombre) → ID_CAMPO "Nombre" → VALOR → CADENA "Juan"
-├─ CAMPO (Apellido) → ID_CAMPO "Apellido" → VALOR → CADENA "Pérez"
-├─ CAMPO (DNI) → ID_CAMPO "DNI" → VALOR → NUMERO "12345678"
-├─ CAMPO (Edad) → ID_CAMPO "Edad" → VALOR → NUMERO "30"
-├─ CAMPO (Diagnóstico) → ID_CAMPO "Diagnóstico" → VALOR → CODIGO_MEDICO "J00"
-├─ CAMPO (Fecha) → ID_CAMPO "Fecha" → VALOR → FECHA "2025-06-10"
-├─ CAMPO (Hora) → ID_CAMPO "Hora" → VALOR → HORA "09:15"
-├─ CAMPO (Hospital/Clínica) → ID_CAMPO "Hospital/Clínica" → VALOR → CADENA "Clínica Santa María"
-├─ CAMPO (Laboratorio) → ID_CAMPO "Laboratorio" → VALOR → CADENA "Lab Central"
-├─ CAMPO (Salón) → ID_CAMPO "Salón" → VALOR → CADENA "MI-P2-103"
-├─ CAMPO (Exámenes) → ID_CAMPO "Exámenes" → VALOR → CADENA "Hemograma, Perfil lipídico"
-├─ CAMPO (Enfermera/Médico) → ID_CAMPO "Enfermera/Médico" → VALOR → CADENA "Dra. Patricia López"
-└─ CAMPO (Tipo de sangre) → ID_CAMPO "Tipo de sangre" → VALOR → TIPO_SANGRE "A+"
-                            </pre></div>
+                            <p>&#x25B8; GRAMATICA</p>
+                            <pre>PACIENTE -> CAMPOS
+CAMPOS -> CAMPO CAMPOS | e
+CAMPO -> ID_CAMPO DOS_PUNTOS VALOR
+VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
                         </div>
                     </div>
                     <div class="fase">
-                        <h4><span>3</span> Traducción (código Python)</h4>
-                        <div class="reglas"><ul><li>Diccionario con datos validados</li><li>Expresiones regulares para formatos</li><li>Búsqueda en diccionario CIE-10</li><li>Salida: éxito o errores clasificados</li></ul></div>
+                        <h4><span>3</span> Traduccion (codigo Python)</h4>
+                        <div class="reglas">
+                            <ul>
+                                <li>Diccionario con datos validados</li>
+                                <li>Expresiones regulares para formatos</li>
+                                <li>Busqueda en diccionario CIE-10</li>
+                                <li>Salida: exito o errores clasificados</li>
+                            </ul>
+                        </div>
                     </div>
-                    <div class="validaciones"><p><strong>✅ Validaciones semánticas:</strong></p><ul><li>Edad: 0-120</li><li>DNI: 8 dígitos</li><li>Diagnóstico: existe en CIE-10</li><li>Salón: MI|CIR|PED|GO-P[1-10]-[1-999]</li><li>Fecha: YYYY-MM-DD</li><li>Hora: HH:MM (24h)</li><li>Tipo sangre: A+,A-,B+,B-,AB+,AB-,O+,O-</li></ul></div>
+                    <div class="validaciones">
+                        <p><strong>Validaciones semanticas:</strong></p>
+                        <ul>
+                            <li>Edad: 0-120</li><li>DNI: 8 digitos</li>
+                            <li>Diagnostico: existe en CIE-10</li>
+                            <li>Salon: MI|CIR|PED|GO-P[1-10]-[1-999]</li>
+                            <li>Fecha: YYYY-MM-DD</li><li>Hora: HH:MM (24h)</li>
+                            <li>Tipo sangre: A+,A-,B+,B-,AB+,AB-,O+,O-</li>
+                        </ul>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Resultado -->
+    <!-- Resultado de compilacion -->
     <div class="resultado">
         {% if mensaje_error_general %}
             <div class="error-general">
-                <strong>⚠️ Error:</strong> {{ mensaje_error_general }}
+                <strong>Error:</strong> {{ mensaje_error_general }}
             </div>
         {% endif %}
         {% if resultado %}
             {% if resultado.exito %}
-                <h3 style="color:green;">✔ Compilación exitosa</h3>
+                <h3 style="color:green;">&#x2714; Compilacion exitosa</h3>
                 <p>
                     <strong>Paciente:</strong> {{ resultado.nombre }} {{ resultado.apellido }}<br>
                     <strong>DNI:</strong> {{ resultado.dni }}<br>
                     <strong>Edad:</strong> {{ resultado.edad }}<br>
-                    <strong>Diagnóstico:</strong> {{ resultado.diagnostico_nombre }} ({{ resultado.codigo }})<br>
+                    <strong>Diagnostico:</strong> {{ resultado.diagnostico_nombre }} ({{ resultado.codigo }})<br>
                     <strong>Fecha:</strong> {{ resultado.fecha }}<br>
                     <strong>Hora:</strong> {{ resultado.hora }}<br>
-                    <strong>Hospital/Clínica:</strong> {{ resultado.hospital_clinica }}<br>
+                    <strong>Hospital/Clinica:</strong> {{ resultado.hospital_clinica }}<br>
                     <strong>Laboratorio:</strong> {{ resultado.laboratorio }}<br>
-                    <strong>Salón:</strong> {{ resultado.salon }}<br>
-                    <strong>Exámenes:</strong> {{ resultado.examenes }}<br>
-                    <strong>Enfermera/Médico:</strong> {{ resultado.enfermera_medico }}<br>
+                    <strong>Salon:</strong> {{ resultado.salon }}<br>
+                    <strong>Examenes:</strong> {{ resultado.examenes }}<br>
+                    <strong>Enfermera/Medico:</strong> {{ resultado.enfermera_medico }}<br>
                     <strong>Tipo de sangre:</strong> {{ resultado.tipo_sangre }}
                 </p>
-                <b>Token generado para diagnóstico:</b> {{ resultado.token }}
+                <b>Token generado para diagnostico:</b> {{ resultado.token }}
             {% else %}
-                <h3 style="color:#c0392b;">✘ Errores encontrados</h3>
-                {% if resultado.errores["LÉXICO"] %}
-                    <b>🔤 Errores léxicos:</b>
-                    <ul>{% for e in resultado.errores["LÉXICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                <h3 style="color:#c0392b;">&#x2718; Errores encontrados</h3>
+                {% if resultado.errores["LEXICO"] %}
+                    <b>Errores lexicos:</b>
+                    <ul>{% for e in resultado.errores["LEXICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
                 {% endif %}
-                {% if resultado.errores["SINTÁCTICO"] %}
-                    <b>🏗️ Errores sintácticos:</b>
-                    <ul>{% for e in resultado.errores["SINTÁCTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% if resultado.errores["SINTACTICO"] %}
+                    <b>Errores sintacticos:</b>
+                    <ul>{% for e in resultado.errores["SINTACTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
                 {% endif %}
-                {% if resultado.errores["SEMÁNTICO"] %}
-                    <b>📖 Errores semánticos:</b>
-                    <ul>{% for e in resultado.errores["SEMÁNTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% if resultado.errores["SEMANTICO"] %}
+                    <b>Errores semanticos:</b>
+                    <ul>{% for e in resultado.errores["SEMANTICO"] %}<li>{{ e }}</li>{% endfor %}</ul>
                 {% endif %}
             {% endif %}
         {% endif %}
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const containers = document.querySelectorAll('.graph-container');
-            containers.forEach(function(container) {
-                let dot = container.getAttribute('data-dot');
-                if (dot && dot.trim() !== '') {
-                    // Limpiar el DOT: eliminar saltos de línea y espacios múltiples
-                    dot = dot.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-                    hpccWasm.graphviz.layout(dot, "svg", "dot").then(function(svg) {
-                        container.innerHTML = svg;
-                    }).catch(function(err) {
-                        console.error('Error rendering graph:', err);
-                        container.innerHTML = `<p style="color:red;font-family:monospace;">❌ Error al renderizar el gráfico.</p>`;
-                    });
-                }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Esperar a que hpcc-js/wasm este listo
+            const wasmReady = (typeof hpccWasm !== 'undefined' && hpccWasm.graphviz)
+                ? Promise.resolve()
+                : new Promise(function (resolve) {
+                    const check = setInterval(function () {
+                        if (typeof hpccWasm !== 'undefined' && hpccWasm.graphviz) {
+                            clearInterval(check);
+                            resolve();
+                        }
+                    }, 100);
+                });
+
+            wasmReady.then(function () {
+                const containers = document.querySelectorAll('.graph-container[data-dot]');
+                containers.forEach(function (container) {
+                    const dot = container.getAttribute('data-dot');
+                    if (!dot || dot.trim() === '') {
+                        container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
+                        return;
+                    }
+                    hpccWasm.graphviz.layout(dot.trim(), "svg", "dot")
+                        .then(function (svg) {
+                            container.innerHTML = svg;
+                            // Asegurarse de que el SVG sea responsivo
+                            const svgEl = container.querySelector('svg');
+                            if (svgEl) {
+                                svgEl.removeAttribute('width');
+                                svgEl.removeAttribute('height');
+                                svgEl.style.maxWidth = '100%';
+                                svgEl.style.height = 'auto';
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error('Error renderizando grafo:', err);
+                            container.innerHTML = '<span class="graph-error">Error al renderizar el grafo: ' + err.message + '</span>';
+                        });
+                });
             });
         });
     </script>
