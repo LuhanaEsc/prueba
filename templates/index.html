@@ -461,7 +461,23 @@ VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
                     <strong>Enfermera/Medico:</strong> {{ resultado.enfermera_medico }}<br>
                     <strong>Tipo de sangre:</strong> {{ resultado.tipo_sangre }}
                 </p>
-                <b>Token generado para diagnostico:</b> {{ resultado.token }}
+                <div style="background:#f0f9f4; border-left:4px solid #27ae60; border-radius:8px; padding:12px 16px; margin-top:10px;">
+                    <b>Token generado para diagnostico:</b><br>
+                    <table style="margin-top:8px; font-size:0.9rem; border-collapse:collapse;">
+                        <tr>
+                            <td style="padding:4px 12px 4px 0; color:#555;">Tipo:</td>
+                            <td><code style="background:#e8f8f0; padding:2px 6px; border-radius:4px;">{{ resultado.token.tipo }}</code></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:4px 12px 4px 0; color:#555;">Valor:</td>
+                            <td><code style="background:#e8f8f0; padding:2px 6px; border-radius:4px;">{{ resultado.token.valor }}</code></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:4px 12px 4px 0; color:#555;">Estados AFD:</td>
+                            <td><code style="background:#e8f8f0; padding:2px 6px; border-radius:4px;">{{ resultado.token.estados | join(' -> ') }}</code></td>
+                        </tr>
+                    </table>
+                </div>
             {% else %}
                 <h3 style="color:#c0392b;">&#x2718; Errores encontrados</h3>
                 {% if resultado.errores["LEXICO"] %}
@@ -482,30 +498,22 @@ VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Esperar a que hpcc-js/wasm este listo
-            const wasmReady = (typeof hpccWasm !== 'undefined' && hpccWasm.graphviz)
-                ? Promise.resolve()
-                : new Promise(function (resolve) {
-                    const check = setInterval(function () {
-                        if (typeof hpccWasm !== 'undefined' && hpccWasm.graphviz) {
-                            clearInterval(check);
-                            resolve();
-                        }
-                    }, 100);
-                });
 
-            wasmReady.then(function () {
-                const containers = document.querySelectorAll('.graph-container[data-dot]');
-                containers.forEach(function (container) {
-                    const dot = container.getAttribute('data-dot');
-                    if (!dot || dot.trim() === '') {
-                        container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
-                        return;
-                    }
-                    hpccWasm.graphviz.layout(dot.trim(), "svg", "dot")
-                        .then(function (svg) {
+            async function renderizarGrafos() {
+                try {
+                    // API correcta para @hpcc-js/wasm v2.x
+                    const graphviz = await hpccWasm.Graphviz.load();
+
+                    const containers = document.querySelectorAll('.graph-container[data-dot]');
+                    for (const container of containers) {
+                        const dot = container.getAttribute('data-dot');
+                        if (!dot || dot.trim() === '') {
+                            container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
+                            continue;
+                        }
+                        try {
+                            const svg = await graphviz.layout(dot.trim(), "svg", "dot");
                             container.innerHTML = svg;
-                            // Asegurarse de que el SVG sea responsivo
                             const svgEl = container.querySelector('svg');
                             if (svgEl) {
                                 svgEl.removeAttribute('width');
@@ -513,13 +521,17 @@ VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
                                 svgEl.style.maxWidth = '100%';
                                 svgEl.style.height = 'auto';
                             }
-                        })
-                        .catch(function (err) {
+                        } catch (err) {
                             console.error('Error renderizando grafo:', err);
-                            container.innerHTML = '<span class="graph-error">Error al renderizar el grafo: ' + err.message + '</span>';
-                        });
-                });
-            });
+                            container.innerHTML = '<span class="graph-error">&#x274C; Error al renderizar grafo</span>';
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error cargando Graphviz WASM:', err);
+                }
+            }
+
+            renderizarGrafos();
         });
     </script>
 </body>
