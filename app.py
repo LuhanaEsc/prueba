@@ -12,7 +12,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Diccionario CIE-10 (ampliado un poco)
+# Diccionario CIE-10
 DICCIONARIO_ENFERMEDADES = {
     "A00": "Cólera", "A01": "Fiebre tifoidea", "A02": "Otras salmonelosis",
     "B20": "Enfermedad por VIH", "J00": "Rinitis aguda", "J01": "Sinusitis aguda",
@@ -23,123 +23,189 @@ DICCIONARIO_ENFERMEDADES = {
 
 TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
 
-# ---------- FUNCIONES DE ANÁLISIS LÉXICO CON REGISTRO DE ESTADOS ----------
+# ---------- GENERACIÓN DE DOT PARA AFDs ----------
+def generar_dot_afd(tipo_token):
+    """Devuelve el código DOT estándar para un tipo de token."""
+    if tipo_token == "CODIGO_MEDICO":
+        return """digraph AFD_CODIGO {
+    rankdir=LR;
+    node [shape=circle];
+    q0 [label="q0"];
+    q1 [label="q1"];
+    q2 [label="q2"];
+    q3 [label="q3", shape=doublecircle];
+    error [label="q_error", color=red];
+    q0 -> q1 [label="[A-Z]"];
+    q0 -> error [label="otro"];
+    q1 -> q2 [label="[0-9]"];
+    q1 -> error [label="otro"];
+    q2 -> q3 [label="[0-9]"];
+    q2 -> error [label="otro"];
+    q3 -> error [label="cualquier símbolo"];
+}"""
+    elif tipo_token == "FECHA":
+        return """digraph AFD_FECHA {
+    rankdir=LR;
+    node [shape=circle];
+    q0; q1; q2; q3; q4; q5; q6; q7; q8;
+    q9 [shape=doublecircle];
+    q0->q1[label="[0-9]"]; q1->q2[label="[0-9]"]; q2->q3[label="[0-9]"]; q3->q4[label="[0-9]"];
+    q4->q5[label="'-'"];   q5->q6[label="[0-9]"]; q6->q7[label="[0-9]"]; q7->q8[label="'-'"];
+    q8->q9[label="[0-9]"];
+}"""
+    elif tipo_token == "HORA":
+        return """digraph AFD_HORA {
+    rankdir=LR;
+    node [shape=circle];
+    q0; q1a; q1b; q2; q3; q4;
+    q5 [shape=doublecircle];
+    q0->q1a[label="[0-1]"]; q0->q1b[label="'2'"];
+    q1a->q2[label="[0-9]"]; q1b->q2[label="[0-3]"];
+    q2->q3[label="':'"];    q3->q4[label="[0-5]"];
+    q4->q5[label="[0-9]"];
+}"""
+    elif tipo_token == "NUMERO":
+        return """digraph AFD_NUMERO {
+    rankdir=LR;
+    q0[shape=circle];
+    q1[shape=doublecircle];
+    q0->q1[label="[0-9]"];
+    q1->q1[label="[0-9]"];
+}"""
+    elif tipo_token == "TIPO_SANGRE":
+        return """digraph AFD_TIPO_SANGRE {
+    rankdir=LR;
+    node [shape=circle];
+    q0; q1; q2 [shape=doublecircle];
+    q0->q1[label="'A'|'B'|'O'|'AB'"];
+    q1->q2[label="'+'|'-'"];
+}"""
+    elif tipo_token == "CADENA":
+        return """digraph AFD_CADENA {
+    rankdir=LR;
+    q0 [shape=doublecircle];
+    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ\\s\\.,\\-]"];
+}"""
+    elif tipo_token == "ID_CAMPO":
+        return """digraph AFD_ID_CAMPO {
+    rankdir=LR;
+    q0 [shape=doublecircle];
+    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ/]"];
+}"""
+    else:
+        return ""
 
-def simular_afd(patron, cadena, nombre_afd, estados_etiquetas=None):
+# ---------- SIMULACIÓN DE AFD PARA OBTENER ESTADOS ----------
+def simular_afd(tipo_token, cadena):
     """
-    Simula un AFD dado por una expresión regular (patrón) sobre la cadena.
-    Retorna una lista de estados por los que pasó (para mostrar la trayectoria).
+    Simula el AFD para el tipo de token dado y devuelve la secuencia de estados.
+    Solo para fines ilustrativos, no es una simulación real, sino una generación
+    de estados basada en la longitud de la cadena.
     """
-    if estados_etiquetas is None:
-        # Generar estados q0, q1, ... según la longitud del patrón (aproximado)
-        # Para simplificar, usamos un conteo de pasos.
-        pass
-    # Para este ejemplo, como los AFDs son básicos, simulamos con la expresión regular
-    # y devolvemos una secuencia de estados ficticia pero ilustrativa.
-    # Para una implementación real, podríamos tener un autómata explícito.
-    # Aquí generamos una secuencia de estados basada en la longitud de la cadena.
-    if re.fullmatch(patron, cadena):
+    # Para simplificar, generamos una secuencia de estados según la longitud
+    # y el tipo de token.
+    if tipo_token in ["CODIGO_MEDICO", "FECHA", "HORA", "NUMERO", "TIPO_SANGRE", "CADENA", "ID_CAMPO"]:
+        # Para tokens que aceptan una longitud variable, generamos q0, q1, ..., qn, qf
         estados = ["q0"]
-        for i, char in enumerate(cadena):
+        for i in range(len(cadena)):
             estados.append(f"q{i+1}")
         estados.append("qf (aceptación)")
         return estados
     else:
-        return ["q0", "q_error (rechazo)"]
+        return ["q0", "q_error"]
 
+# ---------- TOKENIZACIÓN CON DOT ----------
 def tokenizar_valor(campo, valor):
-    """
-    Dado un campo y su valor, devuelve una lista de tokens con su tipo,
-    el valor y los estados del AFD correspondiente.
-    También devuelve el tipo de token principal.
-    """
     tokens = []
-    # Token para el identificador del campo (ID_CAMPO)
-    if re.fullmatch(r'[A-Za-zÁÉÍÓÚÑáéíóúñ/]+', campo):
-        tokens.append({
-            "tipo": "ID_CAMPO",
-            "valor": campo,
-            "estados": ["q0", "qf (aceptación)"]
-        })
-    else:
-        tokens.append({
-            "tipo": "ERROR_LEXICO",
-            "valor": campo,
-            "estados": ["q0", "q_error"]
-        })
-
-    # Token para los dos puntos (siempre presente en el formato)
+    # Token ID_CAMPO
+    tokens.append({
+        "tipo": "ID_CAMPO",
+        "valor": campo,
+        "estados": ["q0", "qf (aceptación)"],
+        "dot": generar_dot_afd("ID_CAMPO")
+    })
+    # Token DOS_PUNTOS
     tokens.append({
         "tipo": "DOS_PUNTOS",
         "valor": ":",
-        "estados": ["q0", "qf (aceptación)"]
+        "estados": ["q0", "qf (aceptación)"],
+        "dot": ""  # no hay AFD para dos puntos
     })
-
-    # Token para el valor (según el tipo de campo)
-    tipo_token = None
-    estados_valor = []
-
-    # Decidir qué patrón usar según el campo
+    # Token del valor
+    # Determinar tipo
+    tipo_token = "CADENA"
     if campo.lower() in ["diagnostico", "diagnóstico", "código", "codigo"]:
-        patron = r'^[A-Z]\d{2}$'
         tipo_token = "CODIGO_MEDICO"
-        if re.fullmatch(patron, valor.strip().upper()):
-            estados_valor = simular_afd(patron, valor.strip().upper(), "CODIGO_MEDICO")
-        else:
-            estados_valor = ["q0", "q_error (rechazo)"]
-            tipo_token = "ERROR_LEXICO"
     elif campo.lower() in ["fecha", "date"]:
-        patron = r'^\d{4}-\d{2}-\d{2}$'
         tipo_token = "FECHA"
-        if re.fullmatch(patron, valor.strip()):
-            estados_valor = simular_afd(patron, valor.strip(), "FECHA")
-        else:
-            estados_valor = ["q0", "q_error"]
-            tipo_token = "ERROR_LEXICO"
     elif campo.lower() in ["hora", "time"]:
-        patron = r'^([01]\d|2[0-3]):[0-5]\d$'
         tipo_token = "HORA"
-        if re.fullmatch(patron, valor.strip()):
-            estados_valor = simular_afd(patron, valor.strip(), "HORA")
-        else:
-            estados_valor = ["q0", "q_error"]
-            tipo_token = "ERROR_LEXICO"
     elif campo.lower() in ["dni", "cedula", "cédula", "edad", "años", "anos"]:
-        patron = r'^\d+$'
         tipo_token = "NUMERO"
-        if re.fullmatch(patron, valor.strip()):
-            estados_valor = simular_afd(patron, valor.strip(), "NUMERO")
-        else:
-            estados_valor = ["q0", "q_error"]
-            tipo_token = "ERROR_LEXICO"
     elif campo.lower() in ["tipo de sangre", "tipo sangre", "rh", "sangre", "tipo_sangre"]:
-        patron = r'^(A|B|AB|O)[+-]$'
         tipo_token = "TIPO_SANGRE"
-        if re.fullmatch(patron, valor.strip().upper()):
-            estados_valor = simular_afd(patron, valor.strip().upper(), "TIPO_SANGRE")
-        else:
-            estados_valor = ["q0", "q_error"]
-            tipo_token = "ERROR_LEXICO"
+
+    # Validar con expresión regular
+    valido = False
+    if tipo_token == "CODIGO_MEDICO":
+        valido = bool(re.fullmatch(r'^[A-Z]\d{2}$', valor.strip().upper()))
+    elif tipo_token == "FECHA":
+        valido = bool(re.fullmatch(r'^\d{4}-\d{2}-\d{2}$', valor.strip()))
+    elif tipo_token == "HORA":
+        valido = bool(re.fullmatch(r'^([01]\d|2[0-3]):[0-5]\d$', valor.strip()))
+    elif tipo_token == "NUMERO":
+        valido = bool(re.fullmatch(r'^\d+$', valor.strip()))
+    elif tipo_token == "TIPO_SANGRE":
+        valido = bool(re.fullmatch(r'^(A|B|AB|O)[+-]$', valor.strip().upper()))
+    else:  # CADENA
+        valido = bool(re.fullmatch(r'^[A-Za-zÁÉÍÓÚÑáéíóúñ\s\.\,\-]+$', valor.strip()))
+
+    if not valido:
+        tipo_token = "ERROR_LEXICO"
+
+    # Simular estados (si es válido, mostramos una secuencia, si no, error)
+    if valido:
+        estados = simular_afd(tipo_token, valor.strip())
     else:
-        # Por defecto, CADENA
-        patron = r'^[A-Za-zÁÉÍÓÚÑáéíóúñ\s\.\,\-]+$'
-        tipo_token = "CADENA"
-        if re.fullmatch(patron, valor.strip()):
-            estados_valor = simular_afd(patron, valor.strip(), "CADENA")
-        else:
-            estados_valor = ["q0", "q_error"]
-            tipo_token = "ERROR_LEXICO"
+        estados = ["q0", "q_error (rechazo)"]
 
     tokens.append({
         "tipo": tipo_token,
         "valor": valor.strip(),
-        "estados": estados_valor
+        "estados": estados,
+        "dot": generar_dot_afd(tipo_token) if valido else ""
     })
-
     return tokens
 
-# ---------- FUNCIONES DE ANÁLISIS SINTÁCTICO Y SEMÁNTICO ----------
+# ---------- GENERACIÓN DE DOT DEL ÁRBOL SINTÁCTICO ----------
+def generar_dot_arbol(datos):
+    dot = "digraph ArbolSintactico {\n"
+    dot += "    node [shape=box, style=filled, fillcolor=lightblue];\n"
+    dot += "    PACIENTE [label=\"PACIENTE\"];\n"
+    for i, (campo, valor) in enumerate(datos.items()):
+        campo_id = f"campo{i}"
+        valor_id = f"valor{i}"
+        dot += f'    {campo_id} [label="CAMPO: {campo}"];\n'
+        # Determinar tipo de token para el valor
+        tipo = "CADENA"
+        if campo.lower() in ["diagnostico", "diagnóstico", "código", "codigo"]:
+            tipo = "CODIGO_MEDICO"
+        elif campo.lower() in ["fecha", "date"]:
+            tipo = "FECHA"
+        elif campo.lower() in ["hora", "time"]:
+            tipo = "HORA"
+        elif campo.lower() in ["dni", "cedula", "cédula", "edad", "años", "anos"]:
+            tipo = "NUMERO"
+        elif campo.lower() in ["tipo de sangre", "tipo sangre", "rh", "sangre", "tipo_sangre"]:
+            tipo = "TIPO_SANGRE"
+        dot += f'    {valor_id} [label="{tipo}: {valor}"];\n'
+        dot += f"    PACIENTE -> {campo_id};\n"
+        dot += f"    {campo_id} -> {valor_id};\n"
+    dot += "}\n"
+    return dot
 
+# ---------- FUNCIONES DE ANÁLISIS SINTÁCTICO Y SEMÁNTICO ----------
+# (Mantén las que ya tenías)
 def analizar_sintaxis(datos):
     campos_requeridos = [
         'nombre', 'apellido', 'dni', 'edad', 'diagnostico',
@@ -154,13 +220,11 @@ def analizar_sintaxis(datos):
 
 def validar_semantica(datos, token_diagnostico):
     errores = []
-    # ... (igual que antes, pero con las mismas validaciones)
-    # Por brevedad, mantengo las validaciones originales, pero puedes copiarlas de tu código.
-    # Yo pondré un resumen.
+    # Aquí copia tus validaciones originales (edad, dni, etc.)
+    # ...
     return errores
 
-# ---------- FUNCIÓN PARA PARSEAR EL ARCHIVO ----------
-
+# ---------- PARSEAR ARCHIVO ----------
 def parsear_archivo_txt(contenido):
     mapeo = {
         'nombre': ['nombre', 'nombres'],
@@ -209,13 +273,12 @@ def parsear_archivo_txt(contenido):
     return datos
 
 # ---------- RUTA PRINCIPAL ----------
-
 @app.route("/", methods=["GET", "POST"])
 def home():
     resultado = None
     mensaje_error_general = None
     tokens_por_campo = None
-    arbol_sintactico = None
+    arbol_dot = None
 
     if request.method == "POST":
         if 'archivo' not in request.files:
@@ -231,19 +294,17 @@ def home():
                     contenido = archivo.read().decode('utf-8')
                     datos = parsear_archivo_txt(contenido)
 
-                    # --- ANÁLISIS LÉXICO COMPLETO ---
+                    # Análisis léxico con tokens y DOT
                     tokens_por_campo = {}
                     for campo, valor in datos.items():
                         tokens_por_campo[campo] = tokenizar_valor(campo, valor)
 
-                    # --- ANÁLISIS SINTÁCTICO (campos obligatorios) ---
+                    # Árbol sintáctico en DOT
+                    arbol_dot = generar_dot_arbol(datos)
+
+                    # Análisis sintáctico y semántico (como antes)
+                    token_diag = tokens_por_campo["diagnostico"][-1]  # el token del valor
                     errores_sintaxis = analizar_sintaxis(datos)
-
-                    # Tokenizar diagnóstico para semántica
-                    token_diag = tokenizar_valor("diagnostico", datos['diagnostico'])[-1]  # el último es el token del valor
-                    # Nota: token_diag es el diccionario con tipo, valor, estados
-
-                    # --- ANÁLISIS SEMÁNTICO ---
                     errores_semantica = validar_semantica(datos, token_diag)
 
                     errores_por_fase = {"LÉXICO": [], "SINTÁCTICO": [], "SEMÁNTICO": []}
@@ -253,9 +314,6 @@ def home():
                         errores_por_fase[fase].append(msg)
 
                     total_errores = sum(len(errores_por_fase[f]) for f in errores_por_fase)
-
-                    # --- CONSTRUCCIÓN DEL ÁRBOL SINTÁCTICO (con los valores reales) ---
-                    arbol_sintactico = construir_arbol(datos)
 
                     if total_errores == 0:
                         codigo = token_diag["valor"]
@@ -287,27 +345,7 @@ def home():
                            resultado=resultado,
                            mensaje_error_general=mensaje_error_general,
                            tokens_por_campo=tokens_por_campo,
-                           arbol_sintactico=arbol_sintactico)
-
-# ---------- FUNCIÓN PARA CONSTRUIR EL ÁRBOL SINTÁCTICO (texto) ----------
-def construir_arbol(datos):
-    arbol = "PACIENTE\n"
-    for campo, valor in datos.items():
-        arbol += f"├─ CAMPO ({campo.capitalize()}) → ID_CAMPO \"{campo}\" → VALOR → "
-        # Determinar tipo de token para mostrar
-        tipo = "CADENA"
-        if campo.lower() in ["diagnostico", "diagnóstico", "código", "codigo"]:
-            tipo = "CODIGO_MEDICO"
-        elif campo.lower() in ["fecha", "date"]:
-            tipo = "FECHA"
-        elif campo.lower() in ["hora", "time"]:
-            tipo = "HORA"
-        elif campo.lower() in ["dni", "cedula", "cédula", "edad", "años", "anos"]:
-            tipo = "NUMERO"
-        elif campo.lower() in ["tipo de sangre", "tipo sangre", "rh", "sangre", "tipo_sangre"]:
-            tipo = "TIPO_SANGRE"
-        arbol += f"{tipo} \"{valor}\"\n"
-    return arbol
+                           arbol_dot=arbol_dot)
 
 if __name__ == "__main__":
     app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
