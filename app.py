@@ -23,18 +23,20 @@ DICCIONARIO_ENFERMEDADES = {
 
 TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
 
-# ---------- GENERACIÓN DE DOT PARA AFDs ----------
-def generar_dot_afd(tipo_token):
-    """Devuelve el código DOT estándar para un tipo de token."""
-    if tipo_token == "CODIGO_MEDICO":
-        return """digraph AFD_CODIGO {
+# ---------- GENERACIÓN DE DOT PARA AFDs (DETERMINISTAS Y NO DETERMINISTAS) ----------
+def generar_dot_afd(tipo_token, version="DFA"):
+    """Devuelve el código DOT para DFA o NFA según el tipo de token."""
+    # Definimos DFA y NFA para cada token
+    afds = {
+        "CODIGO_MEDICO": {
+            "DFA": """digraph AFD_CODIGO {
     rankdir=LR;
-    node [shape=circle];
+    node [shape=circle, fontname="Arial"];
     q0 [label="q0"];
     q1 [label="q1"];
     q2 [label="q2"];
-    q3 [label="q3", shape=doublecircle];
-    error [label="q_error", color=red];
+    q3 [label="q3", shape=doublecircle, fillcolor=lightgreen, style=filled];
+    error [label="q_error", fillcolor=red, style=filled, fontcolor=white];
     q0 -> q1 [label="[A-Z]"];
     q0 -> error [label="otro"];
     q1 -> q2 [label="[0-9]"];
@@ -42,77 +44,150 @@ def generar_dot_afd(tipo_token):
     q2 -> q3 [label="[0-9]"];
     q2 -> error [label="otro"];
     q3 -> error [label="cualquier símbolo"];
-}"""
-    elif tipo_token == "FECHA":
-        return """digraph AFD_FECHA {
+}""",
+            "NFA": """digraph AFN_CODIGO {
     rankdir=LR;
-    node [shape=circle];
+    node [shape=circle, fontname="Arial"];
+    q0 [label="q0"];
+    q1 [label="q1"];
+    q2 [label="q2"];
+    q3 [label="q3", shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0 -> q1 [label="[A-Z]"];
+    q1 -> q2 [label="[0-9]"];
+    q1 -> q2 [label="ε"];  // transición ε (no determinista)
+    q2 -> q3 [label="[0-9]"];
+    q2 -> q3 [label="ε"];
+}"""
+        },
+        "FECHA": {
+            "DFA": """digraph AFD_FECHA {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
     q0; q1; q2; q3; q4; q5; q6; q7; q8;
-    q9 [shape=doublecircle];
+    q9 [shape=doublecircle, fillcolor=lightgreen, style=filled];
     q0->q1[label="[0-9]"]; q1->q2[label="[0-9]"]; q2->q3[label="[0-9]"]; q3->q4[label="[0-9]"];
     q4->q5[label="'-'"];   q5->q6[label="[0-9]"]; q6->q7[label="[0-9]"]; q7->q8[label="'-'"];
     q8->q9[label="[0-9]"];
-}"""
-    elif tipo_token == "HORA":
-        return """digraph AFD_HORA {
+}""",
+            "NFA": """digraph AFN_FECHA {
     rankdir=LR;
-    node [shape=circle];
+    node [shape=circle, fontname="Arial"];
+    q0; q1; q2; q3; q4; q5; q6; q7; q8;
+    q9 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q1[label="[0-9]"]; q1->q2[label="[0-9]"]; q2->q3[label="[0-9]"]; q3->q4[label="[0-9]"];
+    q4->q5[label="'-'"];   q5->q6[label="[0-9]"]; q6->q7[label="[0-9]"]; q7->q8[label="'-'"];
+    q8->q9[label="[0-9]"];
+    q0->q2[label="ε"]; q4->q6[label="ε"];  // transiciones ε
+}"""
+        },
+        "HORA": {
+            "DFA": """digraph AFD_HORA {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
     q0; q1a; q1b; q2; q3; q4;
-    q5 [shape=doublecircle];
+    q5 [shape=doublecircle, fillcolor=lightgreen, style=filled];
     q0->q1a[label="[0-1]"]; q0->q1b[label="'2'"];
     q1a->q2[label="[0-9]"]; q1b->q2[label="[0-3]"];
     q2->q3[label="':'"];    q3->q4[label="[0-5]"];
     q4->q5[label="[0-9]"];
-}"""
-    elif tipo_token == "NUMERO":
-        return """digraph AFD_NUMERO {
+}""",
+            "NFA": """digraph AFN_HORA {
     rankdir=LR;
-    q0[shape=circle];
-    q1[shape=doublecircle];
+    node [shape=circle, fontname="Arial"];
+    q0; q1a; q1b; q2; q3; q4;
+    q5 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q1a[label="[0-1]"]; q0->q1b[label="'2'"];
+    q1a->q2[label="[0-9]"]; q1b->q2[label="[0-3]"];
+    q2->q3[label="':'"];    q3->q4[label="[0-5]"];
+    q4->q5[label="[0-9]"];
+    q1a->q2[label="ε"]; q1b->q2[label="ε"];
+}"""
+        },
+        "NUMERO": {
+            "DFA": """digraph AFD_NUMERO {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
+    q0;
+    q1 [shape=doublecircle, fillcolor=lightgreen, style=filled];
     q0->q1[label="[0-9]"];
     q1->q1[label="[0-9]"];
-}"""
-    elif tipo_token == "TIPO_SANGRE":
-        return """digraph AFD_TIPO_SANGRE {
+}""",
+            "NFA": """digraph AFN_NUMERO {
     rankdir=LR;
-    node [shape=circle];
-    q0; q1; q2 [shape=doublecircle];
+    node [shape=circle, fontname="Arial"];
+    q0; q1; q2;
+    q2 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q1[label="[0-9]"];
+    q0->q2[label="ε"];
+    q1->q1[label="[0-9]"];
+    q1->q2[label="ε"];
+}"""
+        },
+        "TIPO_SANGRE": {
+            "DFA": """digraph AFD_TIPO_SANGRE {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
+    q0; q1; q2 [shape=doublecircle, fillcolor=lightgreen, style=filled];
     q0->q1[label="'A'|'B'|'O'|'AB'"];
     q1->q2[label="'+'|'-'"];
-}"""
-    elif tipo_token == "CADENA":
-        return """digraph AFD_CADENA {
+}""",
+            "NFA": """digraph AFN_TIPO_SANGRE {
     rankdir=LR;
-    q0 [shape=doublecircle];
-    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ\\s\\.,\\-]"];
+    node [shape=circle, fontname="Arial"];
+    q0; q1; q2;
+    q2 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q1[label="'A'|'B'|'O'|'AB'"];
+    q1->q2[label="'+'|'-'"];
+    q0->q1[label="ε"];
+    q1->q2[label="ε"];
 }"""
-    elif tipo_token == "ID_CAMPO":
-        return """digraph AFD_ID_CAMPO {
+        },
+        "CADENA": {
+            "DFA": """digraph AFD_CADENA {
     rankdir=LR;
-    q0 [shape=doublecircle];
+    node [shape=circle, fontname="Arial"];
+    q0 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ\\\\s\\\\.,\\\\-]"];
+}""",
+            "NFA": """digraph AFN_CADENA {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
+    q0 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ\\\\s\\\\.,\\\\-]"];
+    q0->q0[label="ε"];
+}"""
+        },
+        "ID_CAMPO": {
+            "DFA": """digraph AFD_ID_CAMPO {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
+    q0 [shape=doublecircle, fillcolor=lightgreen, style=filled];
     q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ/]"];
+}""",
+            "NFA": """digraph AFN_ID_CAMPO {
+    rankdir=LR;
+    node [shape=circle, fontname="Arial"];
+    q0 [shape=doublecircle, fillcolor=lightgreen, style=filled];
+    q0->q0[label="[A-Za-zÁÉÍÓÚÑáéíóúñ/]"];
+    q0->q0[label="ε"];
 }"""
-    else:
+        }
+    }
+    if tipo_token not in afds:
         return ""
+    return afds[tipo_token].get(version, "")
 
 # ---------- SIMULACIÓN DE AFD PARA OBTENER ESTADOS ----------
 def simular_afd(tipo_token, cadena):
-    """
-    Simula el AFD para el tipo de token dado y devuelve la secuencia de estados.
-    Solo para fines ilustrativos, no es una simulación real, sino una generación
-    de estados basada en la longitud de la cadena.
-    """
-    # Para simplificar, generamos una secuencia de estados según la longitud
-    # y el tipo de token.
+    """Devuelve una secuencia de estados ilustrativa."""
     if tipo_token in ["CODIGO_MEDICO", "FECHA", "HORA", "NUMERO", "TIPO_SANGRE", "CADENA", "ID_CAMPO"]:
-        # Para tokens que aceptan una longitud variable, generamos q0, q1, ..., qn, qf
         estados = ["q0"]
         for i in range(len(cadena)):
             estados.append(f"q{i+1}")
         estados.append("qf (aceptación)")
         return estados
     else:
-        return ["q0", "q_error"]
+        return ["q0", "q_error (rechazo)"]
 
 # ---------- TOKENIZACIÓN CON DOT ----------
 def tokenizar_valor(campo, valor):
@@ -122,17 +197,18 @@ def tokenizar_valor(campo, valor):
         "tipo": "ID_CAMPO",
         "valor": campo,
         "estados": ["q0", "qf (aceptación)"],
-        "dot": generar_dot_afd("ID_CAMPO")
+        "dot_dfa": generar_dot_afd("ID_CAMPO", "DFA"),
+        "dot_nfa": generar_dot_afd("ID_CAMPO", "NFA")
     })
-    # Token DOS_PUNTOS
+    # Token DOS_PUNTOS (sin AFD)
     tokens.append({
         "tipo": "DOS_PUNTOS",
         "valor": ":",
-        "estados": ["q0", "qf (aceptación)"],
-        "dot": ""  # no hay AFD para dos puntos
+        "estados": [],
+        "dot_dfa": "",
+        "dot_nfa": ""
     })
     # Token del valor
-    # Determinar tipo
     tipo_token = "CADENA"
     if campo.lower() in ["diagnostico", "diagnóstico", "código", "codigo"]:
         tipo_token = "CODIGO_MEDICO"
@@ -145,7 +221,6 @@ def tokenizar_valor(campo, valor):
     elif campo.lower() in ["tipo de sangre", "tipo sangre", "rh", "sangre", "tipo_sangre"]:
         tipo_token = "TIPO_SANGRE"
 
-    # Validar con expresión regular
     valido = False
     if tipo_token == "CODIGO_MEDICO":
         valido = bool(re.fullmatch(r'^[A-Z]\d{2}$', valor.strip().upper()))
@@ -157,35 +232,39 @@ def tokenizar_valor(campo, valor):
         valido = bool(re.fullmatch(r'^\d+$', valor.strip()))
     elif tipo_token == "TIPO_SANGRE":
         valido = bool(re.fullmatch(r'^(A|B|AB|O)[+-]$', valor.strip().upper()))
-    else:  # CADENA
+    else:
         valido = bool(re.fullmatch(r'^[A-Za-zÁÉÍÓÚÑáéíóúñ\s\.\,\-]+$', valor.strip()))
 
-    if not valido:
-        tipo_token = "ERROR_LEXICO"
-
-    # Simular estados (si es válido, mostramos una secuencia, si no, error)
     if valido:
         estados = simular_afd(tipo_token, valor.strip())
+        dot_dfa = generar_dot_afd(tipo_token, "DFA")
+        dot_nfa = generar_dot_afd(tipo_token, "NFA")
     else:
+        tipo_token = "ERROR_LEXICO"
         estados = ["q0", "q_error (rechazo)"]
+        dot_dfa = ""
+        dot_nfa = ""
 
     tokens.append({
         "tipo": tipo_token,
         "valor": valor.strip(),
         "estados": estados,
-        "dot": generar_dot_afd(tipo_token) if valido else ""
+        "dot_dfa": dot_dfa,
+        "dot_nfa": dot_nfa
     })
     return tokens
 
 # ---------- GENERACIÓN DE DOT DEL ÁRBOL SINTÁCTICO ----------
 def generar_dot_arbol(datos):
     dot = "digraph ArbolSintactico {\n"
-    dot += "    node [shape=box, style=filled, fillcolor=lightblue];\n"
-    dot += "    PACIENTE [label=\"PACIENTE\"];\n"
+    dot += "    node [shape=box, style=filled, fillcolor=lightblue, fontname=\"Arial\"];\n"
+    dot += "    PACIENTE [label=\"PACIENTE\", fillcolor=lightgreen, style=filled];\n"
     for i, (campo, valor) in enumerate(datos.items()):
         campo_id = f"campo{i}"
         valor_id = f"valor{i}"
-        dot += f'    {campo_id} [label="CAMPO: {campo}"];\n'
+        # Escapar caracteres especiales para DOT
+        campo_clean = campo.replace('"', '\\"').replace('\n', ' ').replace('\\', '\\\\')
+        valor_clean = str(valor).replace('"', '\\"').replace('\n', ' ').replace('\\', '\\\\')
         # Determinar tipo de token para el valor
         tipo = "CADENA"
         if campo.lower() in ["diagnostico", "diagnóstico", "código", "codigo"]:
@@ -198,14 +277,14 @@ def generar_dot_arbol(datos):
             tipo = "NUMERO"
         elif campo.lower() in ["tipo de sangre", "tipo sangre", "rh", "sangre", "tipo_sangre"]:
             tipo = "TIPO_SANGRE"
-        dot += f'    {valor_id} [label="{tipo}: {valor}"];\n'
+        dot += f'    {campo_id} [label="CAMPO: {campo_clean}"];\n'
+        dot += f'    {valor_id} [label="{tipo}: {valor_clean}"];\n'
         dot += f"    PACIENTE -> {campo_id};\n"
         dot += f"    {campo_id} -> {valor_id};\n"
     dot += "}\n"
     return dot
 
-# ---------- FUNCIONES DE ANÁLISIS SINTÁCTICO Y SEMÁNTICO ----------
-# (Mantén las que ya tenías)
+# ---------- ANÁLISIS SINTÁCTICO ----------
 def analizar_sintaxis(datos):
     campos_requeridos = [
         'nombre', 'apellido', 'dni', 'edad', 'diagnostico',
@@ -218,10 +297,80 @@ def analizar_sintaxis(datos):
             errores.append(("SINTÁCTICO", f"Falta el campo '{campo}' en el archivo"))
     return errores
 
+# ---------- ANÁLISIS SEMÁNTICO ----------
 def validar_semantica(datos, token_diagnostico):
     errores = []
-    # Aquí copia tus validaciones originales (edad, dni, etc.)
-    # ...
+    nombre = datos.get('nombre', '')
+    apellido = datos.get('apellido', '')
+    dni = datos.get('dni', '')
+    edad = datos.get('edad', '')
+    fecha = datos.get('fecha', '')
+    hora = datos.get('hora', '')
+    hospital = datos.get('hospital_clinica', '')
+    laboratorio = datos.get('laboratorio', '')
+    salon = datos.get('salon', '')
+    examenes = datos.get('examenes', '')
+    enfermera = datos.get('enfermera_medico', '')
+    tipo_sangre = datos.get('tipo_sangre', '').upper()
+    if tipo_sangre == '0+':
+        tipo_sangre = 'O+'
+
+    # Validar nombre y apellido
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', nombre.strip()):
+        errores.append(("SEMÁNTICO", "El nombre solo debe contener letras"))
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$', apellido.strip()):
+        errores.append(("SEMÁNTICO", "El apellido solo debe contener letras"))
+    # Edad
+    try:
+        edad_num = int(edad)
+        if edad_num < 0 or edad_num > 120:
+            errores.append(("SEMÁNTICO", "Edad fuera de rango (0-120)"))
+    except ValueError:
+        errores.append(("SEMÁNTICO", "La edad debe ser un número entero"))
+    # DNI
+    if len(dni.strip()) != 8 or not dni.isdigit():
+        errores.append(("SEMÁNTICO", "El DNI debe tener exactamente 8 dígitos numéricos"))
+    # Diagnóstico
+    if token_diagnostico["tipo"] == "ERROR_LEXICO":
+        errores.append(("LÉXICO", f"Código inválido: {token_diagnostico['valor']}"))
+    elif token_diagnostico["tipo"] == "CODIGO_MEDICO":
+        if token_diagnostico["valor"] not in DICCIONARIO_ENFERMEDADES:
+            errores.append(("SEMÁNTICO", f"Código {token_diagnostico['valor']} no existe en el diccionario"))
+    # Fecha
+    try:
+        datetime.strptime(fecha, "%Y-%m-%d")
+    except ValueError:
+        errores.append(("SEMÁNTICO", "Fecha inválida. Use YYYY-MM-DD"))
+    # Hora
+    if not re.match(r'^([01]\d|2[0-3]):([0-5]\d)$', hora):
+        errores.append(("SEMÁNTICO", "Hora inválida. Use HH:MM (24h)"))
+    # Hospital
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\.\-]+$', hospital):
+        errores.append(("SEMÁNTICO", "Hospital/Clínica solo letras, espacios, puntos y guiones"))
+    # Laboratorio
+    if not re.match(r'^[a-zA-Z0-9\s\-_]+$', laboratorio):
+        errores.append(("SEMÁNTICO", "Laboratorio solo letras, números, espacios, guiones"))
+    # Salón
+    patron_salon = r'^(MI|CIR|PED|GO)-P(\d+)-(\d+)$'
+    match_salon = re.match(patron_salon, salon.strip().upper())
+    if not match_salon:
+        errores.append(("SEMÁNTICO", "Salón inválido. Ej: MI-P2-103"))
+    else:
+        piso = int(match_salon.group(2))
+        numero = int(match_salon.group(3))
+        if piso < 1 or piso > 10:
+            errores.append(("SEMÁNTICO", "Piso entre 1 y 10"))
+        if numero < 1 or numero > 999:
+            errores.append(("SEMÁNTICO", "Número de salón entre 1 y 999"))
+    # Exámenes
+    if len(examenes.strip()) == 0:
+        errores.append(("SEMÁNTICO", "Exámenes no puede estar vacío"))
+    # Enfermera/Médico
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\.]+$', enfermera):
+        errores.append(("SEMÁNTICO", "Enfermera/Médico solo letras, espacios y puntos"))
+    # Tipo sangre
+    if tipo_sangre not in TIPOS_SANGRE_VALIDOS:
+        errores.append(("SEMÁNTICO", f"Tipo de sangre inválido. Válidos: {', '.join(TIPOS_SANGRE_VALIDOS)}"))
     return errores
 
 # ---------- PARSEAR ARCHIVO ----------
@@ -294,7 +443,7 @@ def home():
                     contenido = archivo.read().decode('utf-8')
                     datos = parsear_archivo_txt(contenido)
 
-                    # Análisis léxico con tokens y DOT
+                    # Análisis léxico con tokens y DOTs
                     tokens_por_campo = {}
                     for campo, valor in datos.items():
                         tokens_por_campo[campo] = tokenizar_valor(campo, valor)
@@ -302,7 +451,7 @@ def home():
                     # Árbol sintáctico en DOT
                     arbol_dot = generar_dot_arbol(datos)
 
-                    # Análisis sintáctico y semántico (como antes)
+                    # Análisis sintáctico y semántico
                     token_diag = tokens_por_campo["diagnostico"][-1]  # el token del valor
                     errores_sintaxis = analizar_sintaxis(datos)
                     errores_semantica = validar_semantica(datos, token_diag)
