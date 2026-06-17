@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Minicompilador Medico</title>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@1.20.0/dist/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/viz.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/full.render.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -498,36 +499,31 @@ VALOR -> CADENA | NUMERO | CODIGO_MEDICO | FECHA | HORA | TIPO_SANGRE</pre>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const viz = new Viz();
+            const containers = document.querySelectorAll('.graph-container[data-dot]');
 
-            // @hpcc-js/wasm v1 necesita saber dónde está el .wasm
-            hpccWasm.wasmFolder("https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@1.20.0/dist/");
-
-            async function renderizarGrafos() {
-                const containers = document.querySelectorAll('.graph-container[data-dot]');
-                for (const container of containers) {
-                    const dot = container.getAttribute('data-dot');
-                    if (!dot || dot.trim() === '') {
-                        container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
-                        continue;
-                    }
-                    try {
-                        const svg = await hpccWasm.graphviz.layout(dot.trim(), "svg", "dot");
-                        container.innerHTML = svg;
-                        const svgEl = container.querySelector('svg');
-                        if (svgEl) {
-                            svgEl.removeAttribute('width');
-                            svgEl.removeAttribute('height');
-                            svgEl.style.maxWidth = '100%';
-                            svgEl.style.height = 'auto';
-                        }
-                    } catch (err) {
-                        console.error('Error renderizando grafo:', err, '\nDOT:\n' + dot);
-                        container.innerHTML = '<span class="graph-error">&#x274C; Error: ' + err.message + '</span>';
-                    }
+            containers.forEach(function(container) {
+                const dot = container.getAttribute('data-dot');
+                if (!dot || dot.trim() === '') {
+                    container.innerHTML = '<span class="graph-error">Sin datos DOT</span>';
+                    return;
                 }
-            }
-
-            renderizarGrafos();
+                viz.renderSVGElement(dot.trim())
+                    .then(function(svgEl) {
+                        svgEl.removeAttribute('width');
+                        svgEl.removeAttribute('height');
+                        svgEl.style.maxWidth = '100%';
+                        svgEl.style.height = 'auto';
+                        container.innerHTML = '';
+                        container.appendChild(svgEl);
+                    })
+                    .catch(function(err) {
+                        console.error('Error renderizando grafo:', err);
+                        container.innerHTML = '<span class="graph-error">&#x274C; Error al renderizar: ' + err.message + '</span>';
+                        // Viz.js se rompe tras un error, hay que recrearlo
+                        viz = new Viz();
+                    });
+            });
         });
     </script>
 </body>
