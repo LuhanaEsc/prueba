@@ -277,7 +277,7 @@ def tokenizar_valor(campo, valor):
     elif tipo_token == "TIPO_SANGRE":
         valido = bool(re.fullmatch(r'^(A|B|AB|O)[+-]$', valor.strip().upper()))
     else:
-        valido = bool(re.fullmatch(r'^[A-Za-z\s\.\,\-]+$', valor.strip()))
+        valido = bool(re.fullmatch(r'^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\,\-]+$', valor.strip()))
 
     if valido:
         estados = simular_afd(tipo_token, valor.strip())
@@ -357,9 +357,9 @@ def validar_semantica(datos, token_diagnostico):
     if tipo_sangre == '0+':
         tipo_sangre = 'O+'
 
-    if not re.match(r'^[a-zA-Z\s]+$', nombre.strip()):
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$', nombre.strip()):
         errores.append(("SEMANTICO", "El nombre solo debe contener letras"))
-    if not re.match(r'^[a-zA-Z\s]+$', apellido.strip()):
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]+$', apellido.strip()):
         errores.append(("SEMANTICO", "El apellido solo debe contener letras"))
     try:
         edad_num = int(edad)
@@ -380,7 +380,7 @@ def validar_semantica(datos, token_diagnostico):
         errores.append(("SEMANTICO", "Fecha invalida. Use YYYY-MM-DD"))
     if not re.match(r'^([01]\d|2[0-3]):([0-5]\d)$', hora):
         errores.append(("SEMANTICO", "Hora invalida. Use HH:MM (24h)"))
-    if not re.match(r'^[a-zA-Z\s\.\-]+$', hospital):
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$', hospital):
         errores.append(("SEMANTICO", "Hospital/Clinica solo letras, espacios, puntos y guiones"))
     if not re.match(r'^[a-zA-Z0-9\s\-_]+$', laboratorio):
         errores.append(("SEMANTICO", "Laboratorio solo letras, numeros, espacios, guiones"))
@@ -397,7 +397,7 @@ def validar_semantica(datos, token_diagnostico):
             errores.append(("SEMANTICO", "Numero de salon entre 1 y 999"))
     if len(examenes.strip()) == 0:
         errores.append(("SEMANTICO", "Examenes no puede estar vacio"))
-    if not re.match(r'^[a-zA-Z\s\.]+$', enfermera):
+    if not re.match(r'^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s\.]+$', enfermera):
         errores.append(("SEMANTICO", "Enfermera/Medico solo letras, espacios y puntos"))
     if tipo_sangre not in TIPOS_SANGRE_VALIDOS:
         errores.append(("SEMANTICO", f"Tipo de sangre invalido. Validos: {', '.join(TIPOS_SANGRE_VALIDOS)}"))
