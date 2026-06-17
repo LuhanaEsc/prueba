@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Minicompilador Médico</title>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2.9.0/dist/index.min.js"></script>
     <style>
-        /* Mantengo tus estilos, solo añado algunos para los estados */
+        /* (Mantén tus estilos, añade algunos para gráficos) */
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 40px; background: #f0f2f5; color: #1a2a3a; }
         h1 { color: #1e466e; border-left: 5px solid #27ae60; padding-left: 15px; }
         .descripcion { background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 25px; }
@@ -37,10 +38,8 @@
         ul { margin-top: 5px; margin-bottom: 10px; }
         .estado-ok { color: green; }
         .estado-error { color: red; }
-        .token-row { display: flex; gap: 20px; border-bottom: 1px solid #eee; padding: 8px 0; }
-        .token-tipo { font-weight: bold; width: 150px; }
-        .token-valor { font-family: monospace; width: 150px; }
-        .token-estados { font-size: 0.8rem; color: #555; }
+        .graph-container { margin: 10px 0; max-width: 100%; overflow: auto; }
+        .graph-container svg { max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -50,7 +49,7 @@
     </div>
 
     <div class="contenedor">
-        <!-- Columna izquierda: formulario + ejemplo -->
+        <!-- Columna izquierda: formulario -->
         <div class="columna-izquierda">
             <div class="campo">
                 <label>Seleccione archivo .txt con los datos del paciente</label>
@@ -80,11 +79,10 @@ Tipo de sangre: A+
             </div>
         </div>
 
-        <!-- Columna derecha: análisis completo generado dinámicamente -->
+        <!-- Columna derecha: análisis dinámico o teoría estática -->
         <div class="analisis-container">
             <h3>Análisis del compilador</h3>
             <div id="contenido-analisis">
-                <!-- Si hay tokens, mostramos el análisis real, si no, mostramos la teoría estática -->
                 {% if tokens_por_campo %}
                     <!-- ANÁLISIS LÉXICO REAL -->
                     <div class="fase">
@@ -115,17 +113,17 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- AFDs con las transiciones reales (mostramos los estados de cada token) -->
+                    <!-- AFDs con imágenes y trayectorias -->
                     <div class="fase">
                         <h4><span>1b</span> AFDs y transiciones recorridas</h4>
                         <div class="reglas">
                             {% for campo, lista_tokens in tokens_por_campo.items() %}
                                 {% for tk in lista_tokens %}
-                                    {% if tk.estados and tk.estados|length > 1 %}
+                                    {% if tk.dot %}
                                         <div class="afd-item">
                                             <h5>Token <code>{{ tk.tipo }}</code> (valor: {{ tk.valor }})</h5>
                                             <p><strong>Secuencia de estados:</strong> {{ tk.estados | join(' → ') }}</p>
-                                            <pre style="background:#f4f4f4;color:#333;">{{ tk.estados | join(' → ') }}</pre>
+                                            <div class="graph-container" data-dot="{{ tk.dot | safe }}"></div>
                                         </div>
                                     {% endif %}
                                 {% endfor %}
@@ -133,13 +131,11 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ÁRBOL SINTÁCTICO CON DATOS REALES -->
+                    <!-- ÁRBOL SINTÁCTICO CON DATOS REALES (imagen) -->
                     <div class="fase">
                         <h4><span>2</span> Análisis Sintáctico - Árbol con valores</h4>
                         <div class="reglas">
-                            <div class="arbol">
-                                <pre>{{ arbol_sintactico }}</pre>
-                            </div>
+                            <div class="graph-container" data-dot="{{ arbol_dot | safe }}"></div>
                         </div>
                     </div>
 
@@ -172,7 +168,6 @@ Tipo de sangre: A+
 
                 {% else %}
                     <!-- TEORÍA ESTÁTICA (cuando no hay resultado) -->
-                    <!-- Aquí va el contenido estático que tenías antes: tabla de tokens, AFDs, árbol genérico, etc. -->
                     <div class="fase">
                         <h4><span>1</span> Análisis Léxico - Tokens y AFDs</h4>
                         <div class="reglas">
@@ -195,14 +190,14 @@ Tipo de sangre: A+
                                 </tbody>
                             </table>
                             <p><strong>🔍 AUTÓMATAS FINITOS DETERMINISTAS (AFD) - teoría</strong></p>
-                            <!-- Aquí puedes incluir los AFDs estáticos con diagramas -->
+                            <!-- Aquí puedes incluir los AFDs estáticos con diagramas en texto (o imágenes) -->
                             <div class="afd-item"><h5>📌 AFD para <code>CODIGO_MEDICO</code></h5><pre>┌─────┐ A-Z   ┌─────┐ 0-9   ┌─────┐ 0-9   ┌─────┐
 │  q0 │ ────→ │  q1 │ ────→ │  q2 │ ────→ │  q3 │ (aceptación)
 └─────┘       └─────┘       └─────┘       └─────┘</pre></div>
-                            <!-- ... etc ... -->
+                            <!-- Repite para los demás AFDs (puedes usar los mismos diagramas de antes) -->
                         </div>
                     </div>
-                    <!-- Aquí más teoría estática (árbol genérico, etc.) -->
+                    <!-- Árbol genérico -->
                     <div class="fase">
                         <h4><span>2</span> Análisis Sintáctico y Árbol (genérico)</h4>
                         <div class="reglas">
@@ -274,8 +269,21 @@ PACIENTE
     </div>
 
     <script>
-        // Ya no necesitamos el script que generaba la teoría estática, porque ahora lo maneja Jinja2.
-        // Pero si quieres mantener algo, puedes dejarlo vacío.
+        // Renderizar todos los gráficos DOT con @hpcc-js/wasm
+        document.addEventListener('DOMContentLoaded', function() {
+            const containers = document.querySelectorAll('.graph-container');
+            containers.forEach(function(container) {
+                const dot = container.getAttribute('data-dot');
+                if (dot) {
+                    hpccWasm.graphviz.layout(dot, "svg", "dot").then(function(svg) {
+                        container.innerHTML = svg;
+                    }).catch(function(err) {
+                        console.error('Error rendering graph:', err);
+                        container.innerHTML = '<p style="color:red;">Error al renderizar gráfico.</p>';
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>
