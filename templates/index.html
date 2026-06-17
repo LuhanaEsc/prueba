@@ -6,220 +6,41 @@
     <title>Minicompilador Médico</title>
     <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2.14.0/dist/index.min.js"></script>
     <style>
+        /* (Mantén los mismos estilos que antes) */
         * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 40px;
-            background: #f0f2f5;
-            color: #1a2a3a;
-        }
-        h1 {
-            color: #1e466e;
-            border-left: 5px solid #27ae60;
-            padding-left: 15px;
-        }
-        .descripcion {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-        }
-        .contenedor {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            margin: 30px 0;
-        }
-        .columna-izquierda {
-            flex: 1;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            min-width: 280px;
-        }
-        .campo {
-            margin-bottom: 20px;
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-        }
-        input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-        }
-        button:hover {
-            background: #1e8449;
-        }
-        .ejemplo-formato {
-            margin-top: 30px;
-            border-top: 1px solid #ddd;
-            padding-top: 20px;
-        }
-        .ejemplo-pre {
-            background: #f4f7f6;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 4px solid #27ae60;
-            font-family: monospace;
-            white-space: pre;
-            overflow-x: auto;
-            margin: 10px 0;
-            line-height: 1.5;
-        }
-        .analisis-container {
-            flex: 1.2;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            min-width: 550px;
-        }
-        .fase {
-            margin-bottom: 35px;
-        }
-        .fase h4 {
-            font-size: 1.3rem;
-            color: #27ae60;
-            margin: 0 0 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .fase h4 span {
-            background: #27ae60;
-            color: white;
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 0.9rem;
-        }
-        .reglas {
-            background: #f8f9fa;
-            padding: 12px 20px;
-            border-radius: 12px;
-            margin: 15px 0;
-        }
-        .reglas table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .reglas td, .reglas th {
-            border: 1px solid #ddd;
-            padding: 6px 8px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .reglas th {
-            background: #e9ecef;
-        }
-        .afd-item {
-            background: #fff3e0;
-            margin: 15px 0;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 5px solid #f39c12;
-        }
-        .afd-item h5 {
-            margin: 0 0 8px 0;
-            color: #e67e22;
-        }
-        .afd-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 10px;
-        }
-        .afd-col {
-            flex: 1;
-            min-width: 300px;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .afd-col h6 {
-            margin: 0 0 8px 0;
-            color: #2c3e50;
-            text-align: center;
-        }
-        pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 10px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 12px;
-            margin: 8px 0;
-        }
-        .arbol {
-            background: #e8f8f5;
-            padding: 10px;
-            border-radius: 10px;
-        }
-        .validaciones {
-            background: #fef9e6;
-            padding: 10px 15px;
-            border-radius: 10px;
-            border-left: 4px solid #f39c12;
-            margin-top: 15px;
-        }
-        .resultado {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 16px;
-            background: white;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            line-height: 1.6;
-        }
-        .error-general {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        ul {
-            margin-top: 5px;
-            margin-bottom: 10px;
-        }
-        .graph-container svg {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background: white;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .graph-container {
-            margin: 10px 0;
-            overflow: auto;
-        }
-        .estado-ok { color: green; }
-        .estado-error { color: red; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background: #f0f2f5; color: #1a2a3a; }
+        h1 { color: #1e466e; border-left: 5px solid #27ae60; padding-left: 15px; }
+        .descripcion { background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+        .contenedor { display: flex; gap: 30px; flex-wrap: wrap; margin: 30px 0; }
+        .columna-izquierda { flex: 1; background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 25px; min-width: 280px; }
+        .campo { margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 8px; font-size: 1.1rem; }
+        input[type="file"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #fafafa; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        button:hover { background: #1e8449; }
+        .ejemplo-formato { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
+        .ejemplo-pre { background: #f4f7f6; padding: 12px; border-radius: 8px; border-left: 4px solid #27ae60; font-family: monospace; white-space: pre; overflow-x: auto; margin: 10px 0; line-height: 1.5; }
+        .analisis-container { flex: 1.2; background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 25px; min-width: 550px; }
+        .fase { margin-bottom: 35px; }
+        .fase h4 { font-size: 1.3rem; color: #27ae60; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
+        .fase h4 span { background: #27ae60; color: white; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.9rem; }
+        .reglas { background: #f8f9fa; padding: 12px 20px; border-radius: 12px; margin: 15px 0; }
+        .reglas table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .reglas td, .reglas th { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+        .reglas th { background: #e9ecef; }
+        .afd-item { background: #fff3e0; margin: 15px 0; padding: 15px; border-radius: 10px; border-left: 5px solid #f39c12; }
+        .afd-item h5 { margin: 0 0 8px 0; color: #e67e22; }
+        .afd-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 10px; }
+        .afd-col { flex: 1; min-width: 300px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        .afd-col h6 { margin: 0 0 8px 0; color: #2c3e50; text-align: center; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 8px 0; }
+        .arbol { background: #e8f8f5; padding: 10px; border-radius: 10px; }
+        .validaciones { background: #fef9e6; padding: 10px 15px; border-radius: 10px; border-left: 4px solid #f39c12; margin-top: 15px; }
+        .resultado { margin-top: 30px; padding: 20px; border-radius: 16px; background: white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); line-height: 1.6; }
+        .error-general { background-color: #f8d7da; color: #721c24; padding: 12px; border-radius: 10px; margin-bottom: 20px; }
+        ul { margin-top: 5px; margin-bottom: 10px; }
+        .graph-container svg { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; background: white; padding: 10px; box-sizing: border-box; }
+        .graph-container { margin: 10px 0; overflow: auto; }
     </style>
 </head>
 <body>
@@ -264,7 +85,7 @@ Tipo de sangre: A+
             <h3>Análisis del compilador</h3>
             <div id="contenido-analisis">
                 {% if tokens_por_campo %}
-                    <!-- ========== ANÁLISIS LÉXICO ========== -->
+                    <!-- ANÁLISIS LÉXICO -->
                     <div class="fase">
                         <h4><span>1</span> Análisis Léxico - Tokens generados</h4>
                         <div class="reglas">
@@ -293,7 +114,7 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ========== AFDs DETERMINISTAS Y NO DETERMINISTAS ========== -->
+                    <!-- AFDs -->
                     <div class="fase">
                         <h4><span>1b</span> AFDs (Deterministas y No Deterministas)</h4>
                         <div class="reglas">
@@ -324,7 +145,7 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ========== ÁRBOL SINTÁCTICO ========== -->
+                    <!-- ÁRBOL -->
                     <div class="fase">
                         <h4><span>2</span> Análisis Sintáctico - Árbol con valores</h4>
                         <div class="reglas">
@@ -332,7 +153,7 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ========== TRADUCCIÓN ========== -->
+                    <!-- TRADUCCIÓN -->
                     <div class="fase">
                         <h4><span>3</span> Traducción (código Python)</h4>
                         <div class="reglas">
@@ -345,7 +166,7 @@ Tipo de sangre: A+
                         </div>
                     </div>
 
-                    <!-- ========== VALIDACIONES SEMÁNTICAS ========== -->
+                    <!-- VALIDACIONES -->
                     <div class="validaciones">
                         <p><strong>✅ Validaciones semánticas:</strong></p>
                         <ul>
@@ -360,7 +181,7 @@ Tipo de sangre: A+
                     </div>
 
                 {% else %}
-                    <!-- ========== TEORÍA ESTÁTICA (carga inicial) ========== -->
+                    <!-- TEORÍA ESTÁTICA (carga inicial) -->
                     <div class="fase">
                         <h4><span>1</span> Análisis Léxico - Tokens y AFDs</h4>
                         <div class="reglas">
@@ -434,7 +255,7 @@ PACIENTE
         </div>
     </div>
 
-    <!-- Resultado de compilación (éxito/errores) -->
+    <!-- Resultado -->
     <div class="resultado">
         {% if mensaje_error_general %}
             <div class="error-general">
@@ -481,17 +302,15 @@ PACIENTE
         document.addEventListener('DOMContentLoaded', function() {
             const containers = document.querySelectorAll('.graph-container');
             containers.forEach(function(container) {
-                const dot = container.getAttribute('data-dot');
+                let dot = container.getAttribute('data-dot');
                 if (dot && dot.trim() !== '') {
-                    // Limpiar posibles caracteres extraños
-                    const cleanDot = dot.trim();
-                    hpccWasm.graphviz.layout(cleanDot, "svg", "dot").then(function(svg) {
+                    // Limpiar el DOT: eliminar saltos de línea y espacios múltiples
+                    dot = dot.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+                    hpccWasm.graphviz.layout(dot, "svg", "dot").then(function(svg) {
                         container.innerHTML = svg;
                     }).catch(function(err) {
                         console.error('Error rendering graph:', err);
                         container.innerHTML = `<p style="color:red;font-family:monospace;">❌ Error al renderizar el gráfico.</p>`;
-                        // Mostrar el DOT para depuración (opcional)
-                        // container.innerHTML += `<pre style="color:#333;background:#f4f4f4;">${cleanDot}</pre>`;
                     });
                 }
             });
