@@ -299,15 +299,26 @@ def tokenizar_valor(campo, valor):
     return tokens
 
 # ---------- GENERACION DE DOT DEL ARBOL SINTACTICO ----------
+def limpiar_dot_label(texto):
+    """Escapa caracteres problemáticos para labels DOT, preservando tildes."""
+    return (str(texto)
+            .replace('\\', '')
+            .replace('"', "'")
+            .replace('<', '')
+            .replace('>', '')
+            .replace('{', '')
+            .replace('}', '')
+            .replace('|', '-'))
+
 def generar_dot_arbol(datos):
     dot = "digraph ArbolSintactico {\n"
     dot += '    node [shape=box style=filled fillcolor=lightblue fontname="Helvetica"];\n'
-    dot += '    PACIENTE [label="PACIENTE" fillcolor=lightgreen style=filled];\n'
+    dot += '    PACIENTE [label="PACIENTE" fillcolor=lightgreen];\n'
     for i, (campo, valor) in enumerate(datos.items()):
         campo_id = f"campo{i}"
         valor_id = f"valor{i}"
-        campo_clean = re.sub(r'[^a-zA-Z0-9 ]', '', campo)
-        valor_clean = re.sub(r'[^a-zA-Z0-9 .,:+\-]', '', str(valor))
+        campo_clean = limpiar_dot_label(campo)
+        valor_clean = limpiar_dot_label(valor)
         tipo = "CADENA"
         if campo.lower() in ["diagnostico"]:
             tipo = "CODIGO_MEDICO"
