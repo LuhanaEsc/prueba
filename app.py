@@ -1,150 +1,103 @@
-import os
-import re
-from flask import Flask, render_template, request
-from datetime import datetime
-from unicodedata import normalize
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Minicompilador Médico</title>
 
-app = Flask(__name__)
-
-ALLOWED_EXTENSIONS = {'txt'}
-
-# =========================
-# CATALOGO CIE-10
-# =========================
-DICCIONARIO_ENFERMEDADES = {
-    "A00": "Colera", "A01": "Fiebre tifoidea", "B20": "VIH",
-    "E10": "Diabetes tipo 1", "E11": "Diabetes tipo 2",
-    "J00": "Rinitis aguda", "U07": "COVID-19"
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    margin: 30px;
 }
 
-TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
-
-# =========================
-# REGEX POR LEXEMA
-# =========================
-LEXEMAS_REGEX = {
-    "ID_DNI": r"^\d{8}$",
-    "ID_EDAD": r"^\d{1,3}$",
-    "ID_DIAGNOSTICO": r"^[A-Z]\d{2}$",
-    "ID_FECHA": r"^\d{4}-\d{2}-\d{2}$",
-    "ID_HORA": r"^([01]\d|2[0-3]):[0-5]\d$",
-    "ID_TIPO_SANGRE": r"^(A|B|AB|O)[+-]$",
-    "ID_NOMBRE": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
-    "ID_APELLIDO": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
-    "ID_HOSPITAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$",
-    "ID_LABORATORIO": r"^[A-Za-z0-9\s\-]+$",
-    "ID_SALON": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$",
-    "ID_EXAMENES": r"^.+$",
-    "ID_PERSONAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }
 
-# =========================
-# TIPOS DE CAMPOS
-# =========================
-def tipo_id_campo(campo):
-    campo = campo.lower()
+.token {
+    background: #eef;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 5px;
+}
 
-    mapa = {
-        "dni": "ID_DNI",
-        "edad": "ID_EDAD",
-        "nombre": "ID_NOMBRE",
-        "apellido": "ID_APELLIDO",
-        "diagnostico": "ID_DIAGNOSTICO",
-        "fecha": "ID_FECHA",
-        "hora": "ID_HORA",
-        "hospital_clinica": "ID_HOSPITAL",
-        "laboratorio": "ID_LABORATORIO",
-        "salon": "ID_SALON",
-        "examenes": "ID_EXAMENES",
-        "enfermera_medico": "ID_PERSONAL",
-        "tipo_sangre": "ID_TIPO_SANGRE"
-    }
+.ok { color: green; }
+.error { color: red; }
 
-    return mapa.get(campo, "ID_CAMPO")
+.catalogo {
+    background: #fff;
+    padding: 15px;
+    border-left: 5px solid #3498db;
+    margin-top: 20px;
+}
+</style>
+</head>
 
-# =========================
-# TOKENIZACION
-# =========================
-def tokenizar_valor(campo, valor):
-    tipo_token = tipo_id_campo(campo)
-    regex = LEXEMAS_REGEX.get(tipo_token, r".*")
+<body>
 
-    valido = bool(re.fullmatch(regex, valor.strip()))
+<h1>🧠 Minicompilador Médico</h1>
 
-    tokens = []
+<!-- ================= FORM ================= -->
+<div class="card">
+<form method="POST" enctype="multipart/form-data">
+    <input type="file" name="archivo">
+    <button>Compilar</button>
+</form>
+</div>
 
-    # token campo
-    tokens.append({
-        "tipo": tipo_token,
-        "valor": campo,
-        "regex": regex,
-        "estado": "OK"
-    })
+<!-- ================= TOKENS ================= -->
+{% if tokens_por_campo %}
+<div class="card">
+<h2>📌 Tokens</h2>
 
-    # token valor
-    tokens.append({
-        "tipo": "VALOR_" + tipo_token,
-        "valor": valor.strip(),
-        "regex": regex,
-        "estado": "OK" if valido else "ERROR"
-    })
+{% for campo, tokens in tokens_por_campo.items() %}
+    <h3>Campo: {{ campo }}</h3>
 
-    return tokens
+    {% for t in tokens %}
+        <div class="token">
+            <b>Tipo:</b> {{ t.tipo }} <br>
+            <b>Valor:</b> {{ t.valor }} <br>
+            <b>Regex:</b> {{ t.regex }} <br>
+            <b class="{{ 'ok' if t.estado == 'OK' else 'error' }}">
+                Estado: {{ t.estado }}
+            </b>
+        </div>
+    {% endfor %}
 
-# =========================
-# PARSER TXT
-# =========================
-def parsear_archivo_txt(contenido):
-    datos = {}
-    for linea in contenido.splitlines():
-        if ":" not in linea:
-            continue
-        k, v = linea.split(":", 1)
-        datos[k.strip().lower()] = v.strip()
-    return datos
+{% endfor %}
+</div>
+{% endif %}
 
-# =========================
-# RUTA
-# =========================
-@app.route("/", methods=["GET", "POST"])
-def home():
-    tokens_por_campo = None
-    resultado = None
-    mensaje_error_general = None
-    catalogo = {
-        "diagnosticos": DICCIONARIO_ENFERMEDADES,
-        "sangre": list(TIPOS_SANGRE_VALIDOS),
-        "salas": [
-            "MI-P1-101", "CIR-P2-210",
-            "PED-P3-305", "GO-P1-103"
-        ]
-    }
+<!-- ================= CATÁLOGO ================= -->
+<div class="catalogo">
+<h2>📚 Catálogo de referencia</h2>
 
-    if request.method == "POST":
-        archivo = request.files.get("archivo")
+<h3>🧪 Diagnósticos</h3>
+<ul>
+{% for k,v in catalogo.diagnosticos.items() %}
+<li>{{ k }} - {{ v }}</li>
+{% endfor %}
+</ul>
 
-        if not archivo:
-            mensaje_error_general = "Archivo no enviado"
-        else:
-            contenido = archivo.read().decode("utf-8")
-            datos = parsear_archivo_txt(contenido)
+<h3>🩸 Sangre</h3>
+<ul>
+{% for s in catalogo.sangre %}
+<li>{{ s }}</li>
+{% endfor %}
+</ul>
 
-            tokens_por_campo = {}
-            for k, v in datos.items():
-                tokens_por_campo[k] = tokenizar_valor(k, v)
+<h3>🏥 Salas</h3>
+<ul>
+{% for s in catalogo.salas %}
+<li>{{ s }}</li>
+{% endfor %}
+</ul>
 
-            resultado = {
-                "exito": True,
-                "datos": datos
-            }
+</div>
 
-    return render_template(
-        "index.html",
-        tokens_por_campo=tokens_por_campo,
-        resultado=resultado,
-        mensaje_error_general=mensaje_error_general,
-        catalogo=catalogo
-    )
-
-if __name__ == "__main__":
-    app.run(debug=True)
+</body>
+</html>
