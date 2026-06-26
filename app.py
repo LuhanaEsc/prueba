@@ -28,19 +28,19 @@ TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
 # REGEX POR LEXEMA
 # =========================
 LEXEMAS_REGEX = {
-    "ID_DNI": r"^\d{8}$",
-    "ID_EDAD": r"^\d{1,3}$",
-    "ID_DIAGNOSTICO": r"^[A-Z]\d{2}$",
-    "ID_FECHA": r"^\d{4}-\d{2}-\d{2}$",
-    "ID_HORA": r"^([01]\d|2[0-3]):[0-5]\d$",
-    "ID_TIPO_SANGRE": r"^(A|B|AB|O)[+-]$",
-    "ID_NOMBRE": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
-    "ID_APELLIDO": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
-    "ID_HOSPITAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$",
-    "ID_LABORATORIO": r"^[A-Za-z0-9\s\-]+$",
-    "ID_SALON": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$",
-    "ID_EXAMENES": r"^.+$",
-    "ID_PERSONAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"
+    "id_dni": r"^\d{8}$",
+    "id_edad": r"^\d{1,3}$",
+    "id_diagnostico": r"^[A-Z]\d{2}$",
+    "id_fecha": r"^\d{4}-\d{2}-\d{2}$",
+    "id_hora": r"^([01]\d|2[0-3]):[0-5]\d$",
+    "id_tipo_sangre": r"^(A|B|AB|O)[+-]$",
+    "id_nombre": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
+    "id_apellido": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
+    "id_hospital": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$",
+    "id_laboratorio": r"^[A-Za-z0-9\s\-]+$",
+    "id_salon": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$",
+    "id_examenes": r"^.+$",
+    "id_personal": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"
 }
 
 
@@ -48,19 +48,19 @@ LEXEMAS_REGEX = {
 # TABLA DE TOKENS GENERAL
 # =========================
 TOKENS_GENERALES = [
-    {"token": "ID_NOMBRE",      "descripcion": "Nombre del paciente",          "ejemplo": "Juan",          "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
-    {"token": "ID_APELLIDO",    "descripcion": "Apellido del paciente",         "ejemplo": "Perez",         "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
-    {"token": "ID_DNI",         "descripcion": "Documento de identidad (8 dígitos)", "ejemplo": "12345678", "regex": r"^\d{8}$"},
-    {"token": "ID_EDAD",        "descripcion": "Edad del paciente (1-3 dígitos)", "ejemplo": "30",          "regex": r"^\d{1,3}$"},
-    {"token": "ID_DIAGNOSTICO", "descripcion": "Código CIE-10",                 "ejemplo": "J00",           "regex": r"^[A-Z]\d{2}$"},
-    {"token": "ID_FECHA",       "descripcion": "Fecha en formato YYYY-MM-DD",   "ejemplo": "2025-06-10",    "regex": r"^\d{4}-\d{2}-\d{2}$"},
-    {"token": "ID_HORA",        "descripcion": "Hora en formato HH:MM",         "ejemplo": "09:15",         "regex": r"^([01]\d|2[0-3]):[0-5]\d$"},
-    {"token": "ID_HOSPITAL",    "descripcion": "Nombre de hospital o clínica",  "ejemplo": "Clinica Central","regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$"},
-    {"token": "ID_LABORATORIO", "descripcion": "Nombre del laboratorio",        "ejemplo": "Lab Uno",       "regex": r"^[A-Za-z0-9\s\-]+$"},
-    {"token": "ID_SALON",       "descripcion": "Código de sala (AREA-PX-NUM)",  "ejemplo": "MI-P2-103",     "regex": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$"},
-    {"token": "ID_EXAMENES",    "descripcion": "Nombre del examen médico",      "ejemplo": "Hemograma",     "regex": r"^.+$"},
-    {"token": "ID_PERSONAL",    "descripcion": "Nombre del médico o enfermera", "ejemplo": "Dra Lopez",     "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"},
-    {"token": "ID_TIPO_SANGRE", "descripcion": "Tipo de sangre ABO/Rh",        "ejemplo": "A+",            "regex": r"^(A|B|AB|O)[+-]$"},
+    {"token": "id_nombre",      "descripcion": "Nombre del paciente",          "ejemplo": "Juan",          "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "id_apellido",    "descripcion": "Apellido del paciente",         "ejemplo": "Perez",         "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "id_dni",         "descripcion": "Documento de identidad (8 dígitos)", "ejemplo": "12345678", "regex": r"^\d{8}$"},
+    {"token": "id_edad",        "descripcion": "Edad del paciente (1-3 dígitos)", "ejemplo": "30",          "regex": r"^\d{1,3}$"},
+    {"token": "id_diagnostico", "descripcion": "Código CIE-10",                 "ejemplo": "J00",           "regex": r"^[A-Z]\d{2}$"},
+    {"token": "id_fecha",       "descripcion": "Fecha en formato YYYY-MM-DD",   "ejemplo": "2025-06-10",    "regex": r"^\d{4}-\d{2}-\d{2}$"},
+    {"token": "id_hora",        "descripcion": "Hora en formato HH:MM",         "ejemplo": "09:15",         "regex": r"^([01]\d|2[0-3]):[0-5]\d$"},
+    {"token": "id_hospital",    "descripcion": "Nombre de hospital o clínica",  "ejemplo": "Clinica Central","regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$"},
+    {"token": "id_laboratorio", "descripcion": "Nombre del laboratorio",        "ejemplo": "Lab Uno",       "regex": r"^[A-Za-z0-9\s\-]+$"},
+    {"token": "id_salon",       "descripcion": "Código de sala (AREA-PX-NUM)",  "ejemplo": "MI-P2-103",     "regex": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$"},
+    {"token": "id_examenes",    "descripcion": "Nombre del examen médico",      "ejemplo": "Hemograma",     "regex": r"^.+$"},
+    {"token": "id_personal",    "descripcion": "Nombre del médico o enfermera", "ejemplo": "Dra Lopez",     "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"},
+    {"token": "id_tipo_sangre", "descripcion": "Tipo de sangre ABO/Rh",        "ejemplo": "A+",            "regex": r"^(A|B|AB|O)[+-]$"},
 ]
 
 
@@ -72,23 +72,23 @@ def tipo_id_campo(campo):
     campo = campo.replace(' ', '_').replace('/', '_').replace('-', '_')
 
     mapa = {
-        "dni": "ID_DNI",
-        "edad": "ID_EDAD",
-        "nombre": "ID_NOMBRE",
-        "apellido": "ID_APELLIDO",
-        "diagnostico": "ID_DIAGNOSTICO",
-        "fecha": "ID_FECHA",
-        "hora": "ID_HORA",
-        "hospital_clinica": "ID_HOSPITAL",
-        "hospital_clínica": "ID_HOSPITAL",
-        "laboratorio": "ID_LABORATORIO",
-        "salon": "ID_SALON",
-        "examenes": "ID_EXAMENES",
-        "enfermera_medico": "ID_PERSONAL",
-        "tipo_sangre": "ID_TIPO_SANGRE"
+        "dni": "id_dni",
+        "edad": "id_edad",
+        "nombre": "id_nombre",
+        "apellido": "id_apellido",
+        "diagnostico": "id_diagnostico",
+        "fecha": "id_fecha",
+        "hora": "id_hora",
+        "hospital_clinica": "id_hospital",
+        "hospital_clínica": "id_hospital",
+        "laboratorio": "id_laboratorio",
+        "salon": "id_salon",
+        "examenes": "id_examenes",
+        "enfermera_medico": "id_personal",
+        "tipo_sangre": "id_tipo_sangre"
     }
 
-    return mapa.get(campo, "ID_CAMPO")
+    return mapa.get(campo, "id_campo")
 
 
 # =========================
@@ -106,6 +106,7 @@ def tokenizar_valor(campo, valor):
 
     afn_dot = generar_dot_afn_token(graph_label)
     afd_dot = generar_dot_afd_token(graph_label)
+    sintactico_dot = generar_dot_sintactico_token(tipo_token, valor.strip())
 
     tokens.append({
         "tipo": tipo_token,
@@ -113,17 +114,19 @@ def tokenizar_valor(campo, valor):
         "regex": regex,
         "estados": ["q0", "qf"],
         "afn_dot": afn_dot,
-        "afd_dot": afd_dot
+        "afd_dot": afd_dot,
+        "sintactico_dot": sintactico_dot
     })
 
     tokens.append({
-        "tipo": "VALOR_" + tipo_token,
+        "tipo": "valor_" + tipo_token,
         "valor": valor.strip(),
         "regex": regex,
         "estado": "OK" if valido else "ERROR",
         "estados": ["q0", "qf"] if valido else ["q0", "q_error"],
         "afn_dot": afn_dot,
-        "afd_dot": afd_dot
+        "afd_dot": afd_dot,
+        "sintactico_dot": sintactico_dot
     })
 
     return tokens
@@ -180,6 +183,22 @@ def generar_dot_afd_token(label):
         "  edge [fontname=\"Courier\"];",
         f"  q0 -> q1 [label=\"{label}\"];",
         "  q1 -> qf [label=\"ε\"];",
+        "}"
+    ])
+
+
+def generar_dot_sintactico_token(tipo_token, valor):
+    tipo_label = tipo_token.replace('_', ' ').upper()
+    valor_label = valor.replace('"', '\\"')
+    return "\n".join([
+        "digraph G {",
+        "  rankdir=TB;",
+        "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
+        "  root [label=\"SENTENCIA\"];",
+        f"  token [label=\"{tipo_label}\"];",
+        f"  valor [label=\"{valor_label}\"];",
+        "  root -> token;",
+        "  root -> valor;",
         "}"
     ])
 
