@@ -95,31 +95,20 @@ def tipo_id_campo(campo):
 # TOKENIZADOR (MEJORADO)
 # =========================
 def tokenizar_valor(campo, valor):
-    tokens = []
-
     tipo_token = tipo_id_campo(campo)
     regex = LEXEMAS_REGEX.get(tipo_token, "")
     valido = bool(re.fullmatch(regex, valor.strip())) if regex else True
     label = regex.strip('^$') if regex else valor.strip()
     label = label if label else valor.strip()
-    graph_label = f"{tipo_token}\n{label}"
+    graph_label = f"{tipo_token}\n{valor.strip()}"
 
     afn_dot = generar_dot_afn_token(graph_label)
     afd_dot = generar_dot_afd_token(graph_label)
     sintactico_dot = generar_dot_sintactico_token(tipo_token, valor.strip())
 
-    tokens.append({
+    return {
         "tipo": tipo_token,
-        "valor": campo,
-        "regex": regex,
-        "estados": ["q0", "qf"],
-        "afn_dot": afn_dot,
-        "afd_dot": afd_dot,
-        "sintactico_dot": sintactico_dot
-    })
-
-    tokens.append({
-        "tipo": "valor_" + tipo_token,
+        "campo": campo,
         "valor": valor.strip(),
         "regex": regex,
         "estado": "OK" if valido else "ERROR",
@@ -127,9 +116,7 @@ def tokenizar_valor(campo, valor):
         "afn_dot": afn_dot,
         "afd_dot": afd_dot,
         "sintactico_dot": sintactico_dot
-    })
-
-    return tokens
+    }
 
 
 # =========================
@@ -210,9 +197,9 @@ def generar_dot_sintactico_general(tokens_por_campo):
         "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
         "  root [label=\"SINTAXIS GENERAL\"];"
     ]
-    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
-        token_label = tokens[0]["tipo"].replace('_', ' ').upper()
-        valor = tokens[1]["valor"].replace('"', '\\"')
+    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = token["tipo"].replace('_', ' ').upper()
+        valor = token["valor"].replace('"', '\\"')
         lineas.append(f"  n{index} [label=\"{token_label}: {valor}\"];" )
         lineas.append(f"  root -> n{index};")
     lineas.append("}")
@@ -226,9 +213,9 @@ def generar_dot_semantico_general(tokens_por_campo):
         "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
         "  root [label=\"SEMANTICA GENERAL\"];"
     ]
-    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
-        estado = tokens[1].get("estado", "OK")
-        token_label = tokens[0]["tipo"].replace('_', ' ').upper()
+    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+        estado = token.get("estado", "OK")
+        token_label = token["tipo"].replace('_', ' ').upper()
         lineas.append(f"  n{index} [label=\"{token_label}: {estado}\"];" )
         lineas.append(f"  root -> n{index};")
     lineas.append("}")
@@ -245,12 +232,12 @@ def generar_dot_afd_nfa(tokens_por_campo):
         "  edge [fontname=\"Courier\"];"
     ]
 
-    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
-        token_label = tokens[0]["tipo"]
-        valor = tokens[1]["valor"].replace('"', '\\"')
+    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = token["tipo"]
+        valor = token["valor"].replace('"', '\\"')
         label = f"{token_label}\\n{valor}"
-        lineas.append(f"  q0 -> q{index} [label=\"{label}\"];")
-        lineas.append(f"  q{index} -> qf [label=\"ε\"];")
+        lineas.append(f"  q0 -> q{index} [label=\"{label}\"];" )
+        lineas.append(f"  q{index} -> qf [label=\"ε\"];" )
 
     lineas.append("}")
     return "\n".join(lineas)
@@ -267,9 +254,9 @@ def generar_dot_afd(tokens_por_campo):
     ]
 
     acumulado = []
-    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
-        token_label = tokens[0]["tipo"]
-        valor = tokens[1]["valor"].replace('"', '\\"')
+    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = token["tipo"]
+        valor = token["valor"].replace('"', '\\"')
         label = f"{token_label}\\n{valor}"
         lineas.append(f"  q{index-1} -> q{index} [label=\"{label}\"];")
         acumulado.append(label)
@@ -314,30 +301,40 @@ def home():
 
                 validacion_lines = []
                 valido_completo = True
+                validacion_campos = []
 
                 for campo, valor in datos.items():
-                    token_list = tokenizar_valor(campo, valor)
-                    tokens_por_campo[campo] = token_list
-                    tokens_usados.extend(token_list)
+                    token_data = tokenizar_valor(campo, valor)
+                    tokens_por_campo[campo] = token_data
+                    tokens_usados.append(token_data)
 
-                    for token_data in token_list:
-                        if token_data.get("estado") == "ERROR":
-                            valido_completo = False
-                            validacion_lines.append(
-                                f"Campo '{campo}' con valor '{valor}' no cumple regex {token_data.get('regex')}"
-                            )
+                    if token_data.get("estado") == "ERROR":
+                        valido_completo = False
+                        validacion_lines.append(
+                            f"Campo '{campo}' con valor '{valor}' no cumple regex {token_data.get('regex')}"
+                        )
+
+                    validacion_campos.append({
+                        "campo": campo,
+                        "valor": valor,
+                        "valido": token_data.get("estado") == "OK",
+                        "estado": token_data.get("estado"),
+                        "label": campo.replace('_', ' ').title()
+                    })
 
                 if valido_completo and datos:
                     validacion_resumen = {
                         "valido": True,
-                        "mensaje": "El archivo .txt es válido y todos los tokens se reconocieron correctamente.",
-                        "detalles": []
+                        "mensaje": "El archivo .txt es válido y todos los campos se reconocen correctamente.",
+                        "detalles": [],
+                        "campos": validacion_campos
                     }
                 else:
                     validacion_resumen = {
                         "valido": False,
                         "mensaje": "El archivo .txt contiene uno o varios valores inválidos.",
-                        "detalles": validacion_lines or ["No se encontraron datos válidos."]
+                        "detalles": validacion_lines or ["No se encontraron datos válidos."],
+                        "campos": validacion_campos
                     }
 
                 arbol_sintactico_general = generar_dot_sintactico_general(tokens_por_campo)
