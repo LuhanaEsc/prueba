@@ -99,7 +99,8 @@ def tipo_id_campo(campo):
         "salon": "id_salon",
         "examenes": "id_examenes",
         "enfermera_medico": "id_personal",
-        "tipo_sangre": "id_tipo_sangre"
+        "tipo_sangre": "id_tipo_sangre",
+        "tipo_de_sangre": "id_tipo_sangre"
     }
 
     return mapa.get(campo, "id_campo")
@@ -155,9 +156,16 @@ def tokenizar_valor(campo, valor):
     tipo_token = tipo_id_campo(campo)
     regex = LEXEMAS_REGEX.get(tipo_token, "")
     valor_str = valor.strip()
-    lex_valido = bool(re.fullmatch(regex, valor_str)) if regex else True
-    sem_valido, sem_error = validar_semantica(tipo_token, valor_str)
-    valido = lex_valido and sem_valido
+    # Valores vacíos deben considerarse inválidos para campos esperados
+    if valor_str == "":
+        lex_valido = False
+        sem_valido = False
+        sem_error = "Valor vacío"
+        valido = False
+    else:
+        lex_valido = bool(re.fullmatch(regex, valor_str)) if regex else True
+        sem_valido, sem_error = validar_semantica(tipo_token, valor_str)
+        valido = lex_valido and sem_valido
     graph_label = f"{tipo_token}\n{valor_str}"
 
     afn_dot = generar_dot_afn_token(graph_label, valido)
