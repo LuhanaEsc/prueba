@@ -218,6 +218,22 @@
             font-weight: bold;
         }
 
+        .validacion-resumen {
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #dcdcdc;
+            background: #fffef2;
+            margin-bottom: 20px;
+        }
+
+        .validacion-ok {
+            color: #218c54;
+        }
+
+        .validacion-error {
+            color: #c0392b;
+        }
+
     </style>
 </head>
 
@@ -271,6 +287,33 @@ Tipo de sangre: A+
 
 {% if not mostrar_tabla_general %}
 
+    <!-- Tabla resumen de tokens usados -->
+    {% if tokens_usados %}
+    <div class="afd-item">
+        <h3>📋 Tokens usados</h3>
+        <table class="tabla-tokens-general">
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>Valor</th>
+                    <th>Regex</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tu in tokens_usados %}
+                <tr>
+                    <td class="token-name">{{ tu.tipo }}</td>
+                    <td>{{ tu.valor }}</td>
+                    <td><span class="regex-celda">{{ tu.regex }}</span></td>
+                    <td>{{ tu.estado if tu.estado is defined else 'OK' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
     <!-- Texto o archivo procesado: mostrar tokens -->
     {% for campo, tokens in tokens_por_campo.items() %}
         {% set outer_index = loop.index0 %}
@@ -311,6 +354,35 @@ Tipo de sangre: A+
         {% endfor %}
 
     {% endfor %}
+
+    {% if validacion_resumen %}
+    <div class="fase validacion-resumen">
+        <h2>✅ Resultado de validación final</h2>
+        <p class="{{ 'validacion-ok' if validacion_resumen.valido else 'validacion-error' }}" style="font-size:1rem; margin-bottom:12px;">
+            {{ validacion_resumen.mensaje }}
+        </p>
+        {% if validacion_resumen.detalles %}
+            <ul style="margin-left:18px; color:#2c3e50;">
+            {% for detalle in validacion_resumen.detalles %}
+                <li>{{ detalle }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Árboles generales -->
+    <div class="fase">
+        <h2>🌳 Árbol sintáctico general</h2>
+        <div id="graph-sintactico-general" class="graph-container" data-script-id="dot-sintactico-general"></div>
+        <script type="application/json" id="dot-sintactico-general">{{ arbol_sintactico_general | tojson }}</script>
+    </div>
+
+    <div class="fase">
+        <h2>🧠 Árbol semántico general</h2>
+        <div id="graph-semantico-general" class="graph-container" data-script-id="dot-semantico-general"></div>
+        <script type="application/json" id="dot-semantico-general">{{ arbol_semantico_general | tojson }}</script>
+    </div>
 
 {% elif mostrar_tabla_general %}
 
