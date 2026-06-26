@@ -368,7 +368,11 @@ Tipo de sangre: A+
 
         <h3>📍 {{ campo }}</h3>
 
-        <div class="afd-item {{ 'error' if t.estado == 'ERROR' else '' }}">
+        <div class="afd-item {{ 'error' if t.estado == 'ERROR' else '' }} {{ 'unknown' if t.tipo == 'id_campo' else '' }}">
+
+            {% if t.tipo == 'id_campo' %}
+            <div style="color:#c0392b; font-weight:700; margin-bottom:8px;">⚠️ Campo no esperado: {{ campo }}</div>
+            {% endif %}
 
             <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
             <b>Valor:</b> {{ t.valor }}<br>
@@ -460,7 +464,9 @@ Tipo de sangre: A+
         <div class="validacion-campo">
             <div>
                 <strong>{{ campo.label }}</strong>: {{ campo.valor }}
-                {% if campo.error_mensaje %}
+                {% if campo.desconocido %}
+                    <div style="font-size:0.9rem; color:#c0392b; margin-top:4px;">Campo no esperado</div>
+                {% elif campo.error_mensaje %}
                     <div style="font-size:0.9rem; color:#c0392b; margin-top:4px;">{{ campo.error_mensaje }}</div>
                 {% endif %}
             </div>
