@@ -264,6 +264,7 @@ Tipo de sangre: A+
 
     <!-- Texto o archivo procesado: mostrar tokens -->
     {% for campo, tokens in tokens_por_campo.items() %}
+        {% set outer_index = loop.index0 %}
 
         <h3>📍 {{ campo }}</h3>
 
@@ -284,12 +285,12 @@ Tipo de sangre: A+
 
                 <div class="graph-block">
                     <div class="graph-label">AFN</div>
-                    <div id="graph-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}"></div>
-                    <script type="application/json" id="dot-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}">{{ t.afn_dot | tojson }}</script>
+                    <div id="graph-afn-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afn-{{ outer_index }}-{{ loop.index0 }}"></div>
+                    <script type="application/json" id="dot-afn-{{ outer_index }}-{{ loop.index0 }}">{{ t.afn_dot | tojson }}</script>
 
                     <div class="graph-label">AFD</div>
-                    <div id="graph-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}"></div>
-                    <script type="application/json" id="dot-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}">{{ t.afd_dot | tojson }}</script>
+                    <div id="graph-afd-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afd-{{ outer_index }}-{{ loop.index0 }}"></div>
+                    <script type="application/json" id="dot-afd-{{ outer_index }}-{{ loop.index0 }}">{{ t.afd_dot | tojson }}</script>
                 </div>
 
             </div>
