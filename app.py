@@ -2,7 +2,7 @@ import os
 import re
 from flask import Flask, render_template, request
 from datetime import datetime
-from unicodedata import normalize
+from unicodedata import normalize, combining
 
 app = Flask(__name__)
 
@@ -22,6 +22,13 @@ DICCIONARIO_ENFERMEDADES = {
 }
 
 TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
+SALAS_VALIDAS = {
+    "MI-P1-101",
+    "CIR-P2-210",
+    "PED-P3-305",
+    "GO-P1-103",
+    "MI-P2-103"
+}
 
 
 # =========================
@@ -67,9 +74,16 @@ TOKENS_GENERALES = [
 # =========================
 # MAPEO DE CAMPOS
 # =========================
-def tipo_id_campo(campo):
+def normalizar_campo(campo):
     campo = campo.lower().strip()
+    campo = normalize('NFKD', campo)
+    campo = ''.join(ch for ch in campo if not combining(ch))
     campo = campo.replace(' ', '_').replace('/', '_').replace('-', '_')
+    return campo
+
+
+def tipo_id_campo(campo):
+    campo = normalizar_campo(campo)
 
     mapa = {
         "dni": "id_dni",
@@ -80,7 +94,7 @@ def tipo_id_campo(campo):
         "fecha": "id_fecha",
         "hora": "id_hora",
         "hospital_clinica": "id_hospital",
-        "hospital_clínica": "id_hospital",
+        "hospital_clinica": "id_hospital",
         "laboratorio": "id_laboratorio",
         "salon": "id_salon",
         "examenes": "id_examenes",
@@ -94,29 +108,83 @@ def tipo_id_campo(campo):
 # =========================
 # TOKENIZADOR (MEJORADO)
 # =========================
+def validar_semantica(tipo_token, valor):
+    valor = valor.strip()
+
+    if tipo_token == "id_edad":
+        if not valor.isdigit():
+            return False, "Edad debe ser un número entero"
+        edad = int(valor)
+        if 0 <= edad <= 120:
+            return True, None
+        return False, "Edad debe estar entre 0 y 120"
+
+    if tipo_token == "id_diagnostico":
+        if valor in DICCIONARIO_ENFERMEDADES:
+            return True, None
+        return False, f"Diagnóstico '{valor}' no pertenece a la lista de CIE-10 conocida"
+
+    if tipo_token == "id_tipo_sangre":
+        if valor in TIPOS_SANGRE_VALIDOS:
+            return True, None
+        return False, f"Tipo de sangre '{valor}' no es válido"
+
+    if tipo_token == "id_fecha":
+        try:
+            datetime.strptime(valor, "%Y-%m-%d")
+            return True, None
+        except ValueError:
+            return False, "Fecha debe tener formato YYYY-MM-DD"
+
+    if tipo_token == "id_hora":
+        try:
+            datetime.strptime(valor, "%H:%M")
+            return True, None
+        except ValueError:
+            return False, "Hora debe tener formato HH:MM"
+
+    if tipo_token == "id_salon":
+        if valor in SALAS_VALIDAS:
+            return True, None
+        return False, f"Sala '{valor}' no es válida"
+
+    return True, None
+
+
 def tokenizar_valor(campo, valor):
     tipo_token = tipo_id_campo(campo)
     regex = LEXEMAS_REGEX.get(tipo_token, "")
-    valido = bool(re.fullmatch(regex, valor.strip())) if regex else True
-    label = regex.strip('^$') if regex else valor.strip()
-    label = label if label else valor.strip()
-    graph_label = f"{tipo_token}\n{valor.strip()}"
+    valor_str = valor.strip()
+    lex_valido = bool(re.fullmatch(regex, valor_str)) if regex else True
+    sem_valido, sem_error = validar_semantica(tipo_token, valor_str)
+    valido = lex_valido and sem_valido
+    graph_label = f"{tipo_token}\n{valor_str}"
 
     afn_dot = generar_dot_afn_token(graph_label)
     afd_dot = generar_dot_afd_token(graph_label)
-    sintactico_dot = generar_dot_sintactico_token(tipo_token, valor.strip())
+    sintactico_dot = generar_dot_sintactico_token(tipo_token, valor_str)
 
-    return {
+    token_data = {
         "tipo": tipo_token,
         "campo": campo,
-        "valor": valor.strip(),
+        "valor": valor_str,
         "regex": regex,
         "estado": "OK" if valido else "ERROR",
         "estados": ["q0", "qf"] if valido else ["q0", "q_error"],
         "afn_dot": afn_dot,
         "afd_dot": afd_dot,
-        "sintactico_dot": sintactico_dot
+        "sintactico_dot": sintactico_dot,
+        "semantico_error": sem_error,
+        "lexico_valido": lex_valido,
+        "semantico_valido": sem_valido
     }
+
+    if not lex_valido and regex:
+        token_data["error_mensaje"] = f"No cumple regex: {regex}"
+    elif not sem_valido:
+        token_data["error_mensaje"] = sem_error
+
+    return token_data
 
 
 # =========================
@@ -310,16 +378,22 @@ def home():
 
                     if token_data.get("estado") == "ERROR":
                         valido_completo = False
-                        validacion_lines.append(
-                            f"Campo '{campo}' con valor '{valor}' no cumple regex {token_data.get('regex')}"
-                        )
+                        if token_data.get("error_mensaje"):
+                            validacion_lines.append(
+                                f"Campo '{campo}' con valor '{valor}': {token_data.get('error_mensaje')}"
+                            )
+                        else:
+                            validacion_lines.append(
+                                f"Campo '{campo}' con valor '{valor}' no es válido"
+                            )
 
                     validacion_campos.append({
                         "campo": campo,
                         "valor": valor,
                         "valido": token_data.get("estado") == "OK",
                         "estado": token_data.get("estado"),
-                        "label": campo.replace('_', ' ').title()
+                        "label": campo.replace('_', ' ').title(),
+                        "error_mensaje": token_data.get("error_mensaje")
                     })
 
                 if valido_completo and datos:
