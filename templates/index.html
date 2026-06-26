@@ -234,6 +234,33 @@
             color: #c0392b;
         }
 
+        .validacion-campos {
+            margin-top: 14px;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #e0d98c;
+            border-radius: 10px;
+        }
+
+        .validacion-campo {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0e8c0;
+        }
+
+        .validacion-campo:last-child {
+            border-bottom: none;
+        }
+
+        .validacion-campo strong {
+            color: #2c3e50;
+        }
+
+        .validacion-estado {
+            font-weight: 700;
+        }
+
     </style>
 </head>
 
@@ -315,43 +342,39 @@ Tipo de sangre: A+
     {% endif %}
 
     <!-- Texto o archivo procesado: mostrar tokens -->
-    {% for campo, tokens in tokens_por_campo.items() %}
+    {% for campo, t in tokens_por_campo.items() %}
         {% set outer_index = loop.index0 %}
 
         <h3>📍 {{ campo }}</h3>
 
-        {% for t in tokens %}
+        <div class="afd-item">
 
-            <div class="afd-item">
+            <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
+            <b>Valor:</b> {{ t.valor }}<br>
 
-                <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
-                <b>Valor:</b> {{ t.valor }}<br>
+            {% if t.regex %}
+            <div class="regex-box">
+                Regex: {{ t.regex }}
+            </div>
+            {% endif %}
 
-                {% if t.regex %}
-                <div class="regex-box">
-                    Regex: {{ t.regex }}
-                </div>
-                {% endif %}
+            <b>Estados:</b> {{ t.estados | join(" → ") }}
 
-                <b>Estados:</b> {{ t.estados | join(" → ") }}
+            <div class="graph-block">
+                <div class="graph-label">AFN</div>
+                <div id="graph-afn-{{ outer_index }}" class="graph-container" data-script-id="dot-afn-{{ outer_index }}"></div>
+                <script type="application/json" id="dot-afn-{{ outer_index }}">{{ t.afn_dot | tojson }}</script>
 
-                <div class="graph-block">
-                    <div class="graph-label">AFN</div>
-                    <div id="graph-afn-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afn-{{ outer_index }}-{{ loop.index0 }}"></div>
-                    <script type="application/json" id="dot-afn-{{ outer_index }}-{{ loop.index0 }}">{{ t.afn_dot | tojson }}</script>
+                <div class="graph-label">AFD</div>
+                <div id="graph-afd-{{ outer_index }}" class="graph-container" data-script-id="dot-afd-{{ outer_index }}"></div>
+                <script type="application/json" id="dot-afd-{{ outer_index }}">{{ t.afd_dot | tojson }}</script>
 
-                    <div class="graph-label">AFD</div>
-                    <div id="graph-afd-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afd-{{ outer_index }}-{{ loop.index0 }}"></div>
-                    <script type="application/json" id="dot-afd-{{ outer_index }}-{{ loop.index0 }}">{{ t.afd_dot | tojson }}</script>
-
-                    <div class="graph-label">Árbol sintáctico</div>
-                    <div id="graph-sintactico-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-sintactico-{{ outer_index }}-{{ loop.index0 }}"></div>
-                    <script type="application/json" id="dot-sintactico-{{ outer_index }}-{{ loop.index0 }}">{{ t.sintactico_dot | tojson }}</script>
-                </div>
-
+                <div class="graph-label">Árbol sintáctico</div>
+                <div id="graph-sintactico-{{ outer_index }}" class="graph-container" data-script-id="dot-sintactico-{{ outer_index }}"></div>
+                <script type="application/json" id="dot-sintactico-{{ outer_index }}">{{ t.sintactico_dot | tojson }}</script>
             </div>
 
-        {% endfor %}
+        </div>
 
     {% endfor %}
 
@@ -361,8 +384,24 @@ Tipo de sangre: A+
         <p class="{{ 'validacion-ok' if validacion_resumen.valido else 'validacion-error' }}" style="font-size:1rem; margin-bottom:12px;">
             {{ validacion_resumen.mensaje }}
         </p>
+
+        {% if validacion_resumen.campos %}
+        <div class="validacion-campos">
+            {% for campo in validacion_resumen.campos %}
+            <div class="validacion-campo">
+                <div>
+                    <strong>{{ campo.label }}</strong>: {{ campo.valor }}
+                </div>
+                <div class="validacion-estado {{ 'validacion-ok' if campo.valido else 'validacion-error' }}">
+                    {{ campo.estado }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% if validacion_resumen.detalles %}
-            <ul style="margin-left:18px; color:#2c3e50;">
+            <ul style="margin-left:18px; color:#2c3e50; margin-top:14px;">
             {% for detalle in validacion_resumen.detalles %}
                 <li>{{ detalle }}</li>
             {% endfor %}
