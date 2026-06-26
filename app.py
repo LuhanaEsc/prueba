@@ -203,6 +203,38 @@ def generar_dot_sintactico_token(tipo_token, valor):
     ])
 
 
+def generar_dot_sintactico_general(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=TB;",
+        "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
+        "  root [label=\"SINTAXIS GENERAL\"];"
+    ]
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = tokens[0]["tipo"].replace('_', ' ').upper()
+        valor = tokens[1]["valor"].replace('"', '\\"')
+        lineas.append(f"  n{index} [label=\"{token_label}: {valor}\"];" )
+        lineas.append(f"  root -> n{index};")
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
+def generar_dot_semantico_general(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=TB;",
+        "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
+        "  root [label=\"SEMANTICA GENERAL\"];"
+    ]
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        estado = tokens[1].get("estado", "OK")
+        token_label = tokens[0]["tipo"].replace('_', ' ').upper()
+        lineas.append(f"  n{index} [label=\"{token_label}: {estado}\"];" )
+        lineas.append(f"  root -> n{index};")
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
 def generar_dot_afd_nfa(tokens_por_campo):
     lineas = [
         "digraph G {",
@@ -255,8 +287,9 @@ def home():
     resultado = None
     mensaje_error_general = None
     tokens_por_campo = None
-    arbol_dot = None
-    afd_dot = None
+    tokens_usados = None
+    arbol_sintactico_general = None
+    arbol_semantico_general = None
 
     catalogo = {
         "diagnosticos": DICCIONARIO_ENFERMEDADES,
@@ -277,10 +310,38 @@ def home():
                 contenido = archivo.read().decode("utf-8")
                 datos = parsear_archivo_txt(contenido)
                 tokens_por_campo = {}
+                tokens_usados = []
+
+                validacion_lines = []
+                valido_completo = True
 
                 for campo, valor in datos.items():
-                    tokens_por_campo[campo] = tokenizar_valor(campo, valor)
+                    token_list = tokenizar_valor(campo, valor)
+                    tokens_por_campo[campo] = token_list
+                    tokens_usados.extend(token_list)
 
+                    for token_data in token_list:
+                        if token_data.get("estado") == "ERROR":
+                            valido_completo = False
+                            validacion_lines.append(
+                                f"Campo '{campo}' con valor '{valor}' no cumple regex {token_data.get('regex')}"
+                            )
+
+                if valido_completo and datos:
+                    validacion_resumen = {
+                        "valido": True,
+                        "mensaje": "El archivo .txt es válido y todos los tokens se reconocieron correctamente.",
+                        "detalles": []
+                    }
+                else:
+                    validacion_resumen = {
+                        "valido": False,
+                        "mensaje": "El archivo .txt contiene uno o varios valores inválidos.",
+                        "detalles": validacion_lines or ["No se encontraron datos válidos."]
+                    }
+
+                arbol_sintactico_general = generar_dot_sintactico_general(tokens_por_campo)
+                arbol_semantico_general = generar_dot_semantico_general(tokens_por_campo)
                 resultado = {"exito": True, "datos": datos, "modo": "archivo"}
             else:
                 mensaje_error_general = "Debes cargar un archivo .txt para procesar los datos."
@@ -295,13 +356,14 @@ def home():
         resultado=resultado,
         mensaje_error_general=mensaje_error_general,
         tokens_por_campo=tokens_por_campo,
-        arbol_dot=arbol_dot,
-        afd_dot=afd_dot,
+        tokens_usados=tokens_usados,
+        validacion_resumen=validacion_resumen if 'validacion_resumen' in locals() else None,
+        arbol_sintactico_general=arbol_sintactico_general,
+        arbol_semantico_general=arbol_semantico_general,
         mostrar_tabla_general=mostrar_tabla_general,
         catalogo=catalogo,
         tokens_generales=TOKENS_GENERALES
     )
-
 
 if __name__ == "__main__":
     app.run(debug=True)
