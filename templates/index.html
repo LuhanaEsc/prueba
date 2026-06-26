@@ -1,389 +1,259 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Minicompilador Medico</title>
+import os
+import re
+from flask import Flask, render_template, request
+from datetime import datetime
+from unicodedata import normalize
 
-    <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/viz.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/viz.js@2.1.2/full.render.js"></script>
+app = Flask(__name__)
 
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 40px;
-            background: #f0f2f5;
-            color: #1a2a3a;
-        }
+UPLOAD_FOLDER = '/tmp'
+ALLOWED_EXTENSIONS = {'txt'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-        h1 {
-            color: #1e466e;
-            border-left: 5px solid #27ae60;
-            padding-left: 15px;
-        }
 
-        .descripcion {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-        }
+# =========================
+# CIE-10
+# =========================
+DICCIONARIO_ENFERMEDADES = {
+    "A00": "Colera", "A01": "Fiebre tifoidea", "A02": "Salmonelosis",
+    "B20": "VIH", "J00": "Rinitis aguda", "J01": "Sinusitis",
+    "E10": "Diabetes tipo 1", "E11": "Diabetes tipo 2",
+    "I10": "Hipertension", "U07": "COVID-19"
+}
 
-        .contenedor {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            margin: 30px 0;
-        }
+TIPOS_SANGRE_VALIDOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
 
-        .columna-izquierda {
-            flex: 1;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            min-width: 280px;
-        }
 
-        .analisis-container {
-            flex: 1.2;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            min-width: 550px;
-        }
+# =========================
+# REGEX POR LEXEMA
+# =========================
+LEXEMAS_REGEX = {
+    "ID_DNI": r"^\d{8}$",
+    "ID_EDAD": r"^\d{1,3}$",
+    "ID_DIAGNOSTICO": r"^[A-Z]\d{2}$",
+    "ID_FECHA": r"^\d{4}-\d{2}-\d{2}$",
+    "ID_HORA": r"^([01]\d|2[0-3]):[0-5]\d$",
+    "ID_TIPO_SANGRE": r"^(A|B|AB|O)[+-]$",
+    "ID_NOMBRE": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
+    "ID_APELLIDO": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$",
+    "ID_HOSPITAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$",
+    "ID_LABORATORIO": r"^[A-Za-z0-9\s\-]+$",
+    "ID_SALON": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$",
+    "ID_EXAMENES": r"^.+$",
+    "ID_PERSONAL": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"
+}
 
-        .campo { margin-bottom: 20px; }
 
-        label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 8px;
-        }
+# =========================
+# TABLA DE TOKENS GENERAL
+# =========================
+TOKENS_GENERALES = [
+    {"token": "ID_NOMBRE",      "descripcion": "Nombre del paciente",          "ejemplo": "Juan",          "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "ID_APELLIDO",    "descripcion": "Apellido del paciente",         "ejemplo": "Perez",         "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "ID_DNI",         "descripcion": "Documento de identidad (8 dígitos)", "ejemplo": "12345678", "regex": r"^\d{8}$"},
+    {"token": "ID_EDAD",        "descripcion": "Edad del paciente (1-3 dígitos)", "ejemplo": "30",          "regex": r"^\d{1,3}$"},
+    {"token": "ID_DIAGNOSTICO", "descripcion": "Código CIE-10",                 "ejemplo": "J00",           "regex": r"^[A-Z]\d{2}$"},
+    {"token": "ID_FECHA",       "descripcion": "Fecha en formato YYYY-MM-DD",   "ejemplo": "2025-06-10",    "regex": r"^\d{4}-\d{2}-\d{2}$"},
+    {"token": "ID_HORA",        "descripcion": "Hora en formato HH:MM",         "ejemplo": "09:15",         "regex": r"^([01]\d|2[0-3]):[0-5]\d$"},
+    {"token": "ID_HOSPITAL",    "descripcion": "Nombre de hospital o clínica",  "ejemplo": "Clinica Central","regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$"},
+    {"token": "ID_LABORATORIO", "descripcion": "Nombre del laboratorio",        "ejemplo": "Lab Uno",       "regex": r"^[A-Za-z0-9\s\-]+$"},
+    {"token": "ID_SALON",       "descripcion": "Código de sala (AREA-PX-NUM)",  "ejemplo": "MI-P2-103",     "regex": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$"},
+    {"token": "ID_EXAMENES",    "descripcion": "Nombre del examen médico",      "ejemplo": "Hemograma",     "regex": r"^.+$"},
+    {"token": "ID_PERSONAL",    "descripcion": "Nombre del médico o enfermera", "ejemplo": "Dra Lopez",     "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"},
+    {"token": "ID_TIPO_SANGRE", "descripcion": "Tipo de sangre ABO/Rh",        "ejemplo": "A+",            "regex": r"^(A|B|AB|O)[+-]$"},
+]
 
-        input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
+# =========================
+# MAPEO DE CAMPOS
+# =========================
+def tipo_id_campo(campo):
+    campo = campo.lower().strip()
+    campo = campo.replace(' ', '_').replace('/', '_').replace('-', '_')
 
-        button:hover { background: #1e8449; }
-
-        .ejemplo-pre {
-            background: #f4f7f6;
-            padding: 12px;
-            border-radius: 8px;
-            border-left: 4px solid #27ae60;
-            font-family: monospace;
-            white-space: pre;
-        }
-
-        .fase { margin-bottom: 30px; }
-
-        .reglas {
-            background: #f8f9fa;
-            padding: 12px;
-            border-radius: 10px;
-        }
-
-        .afd-item {
-            background: #fff3e0;
-            padding: 12px;
-            border-left: 5px solid #f39c12;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-
-        .catalogo {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 30px;
-            border-left: 5px solid #3498db;
-        }
-
-        .regex-box {
-            background: #eef7ff;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 3px 8px;
-            background: #27ae60;
-            color: white;
-            border-radius: 6px;
-            font-size: 0.75rem;
-        }
-
-        /* ===== TABLA DE TOKENS GENERAL ===== */
-        .tabla-tokens-general {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.88rem;
-            margin-top: 10px;
-        }
-
-        .tabla-tokens-general thead tr {
-            background: #1e466e;
-            color: white;
-        }
-
-        .tabla-tokens-general th {
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        .tabla-tokens-general td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #e0e6ed;
-            vertical-align: top;
-        }
-
-        .tabla-tokens-general tbody tr:nth-child(even) {
-            background: #f4f7fb;
-        }
-
-        .tabla-tokens-general tbody tr:hover {
-            background: #e8f4e8;
-        }
-
-        .tabla-tokens-general .token-name {
-            font-family: monospace;
-            font-weight: bold;
-            color: #1e466e;
-            white-space: nowrap;
-        }
-
-        .tabla-tokens-general .regex-celda {
-            font-family: monospace;
-            font-size: 0.78rem;
-            color: #555;
-            background: #eef7ff;
-            padding: 3px 6px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .tabla-tokens-general .ejemplo-celda {
-            font-family: monospace;
-            color: #27ae60;
-            font-weight: bold;
-        }
-
-    </style>
-</head>
-
-<body>
-
-<h1>📋 Minicompilador Médico</h1>
-
-<div class="descripcion">
-    Este sistema simula un compilador de 3 fases: léxico, sintáctico y semántico aplicado a datos médicos.
-</div>
-
-<div class="contenedor">
-
-<!-- ================= INPUT ================= -->
-<div class="columna-izquierda">
-
-<form method="POST" enctype="multipart/form-data">
-    <div class="campo">
-        <label>Ingresar texto</label>
-        <textarea name="texto" rows="12" placeholder="Pega aquí tu texto en formato Nombre: Juan..." style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; resize:vertical;"></textarea>
-    </div>
-
-    <div class="campo">
-        <label>O cargar archivo .txt</label>
-        <input type="file" name="archivo">
-    </div>
-
-    <button>Compilar</button>
-</form>
-
-<br>
-
-<strong>Formato esperado:</strong>
-<pre class="ejemplo-pre">
-Nombre: Juan
-Apellido: Perez
-DNI: 12345678
-Edad: 30
-Diagnostico: J00
-Fecha: 2025-06-10
-Hora: 09:15
-Hospital/Clinica: Clinica Central
-Laboratorio: Lab Uno
-Salon: MI-P2-103
-Examenes: Hemograma
-Enfermera/Medico: Dra Lopez
-Tipo de sangre: A+
-</pre>
-
-</div>
-
-<!-- ================= ANALISIS ================= -->
-<div class="analisis-container">
-
-<h2>📌 Análisis Léxico</h2>
-
-{% if tokens_por_campo %}
-
-    <!-- Texto o archivo procesado: mostrar tokens -->
-    {% for campo, tokens in tokens_por_campo.items() %}
-
-        <h3>📍 {{ campo }}</h3>
-
-        {% for t in tokens %}
-
-            <div class="afd-item">
-
-                <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
-                <b>Valor:</b> {{ t.valor }}<br>
-
-                {% if t.regex %}
-                <div class="regex-box">
-                    Regex: {{ t.regex }}
-                </div>
-                {% endif %}
-
-                <b>Estados:</b> {{ t.estados | join(" → ") }}
-
-            </div>
-
-        {% endfor %}
-
-    {% endfor %}
-
-    {% if arbol_dot %}
-    <div class="fase">
-        <h2>🧠 AFDN / AFN Generado</h2>
-        <div id="graph-nfa"></div>
-    </div>
-    {% endif %}
-
-    {% if afd_dot %}
-    <div class="fase">
-        <h2>✅ AFD Generado</h2>
-        <div id="graph-afd"></div>
-    </div>
-    {% endif %}
-
-{% else %}
-
-    <!-- Sin archivo: mostrar tabla general de tokens -->
-    <p style="color:#555; margin-bottom:14px;">
-        Carga un archivo <code>.txt</code> para ver el análisis léxico de tus datos.
-        A continuación se muestran todos los tokens reconocidos por el compilador:
-    </p>
-
-    <table class="tabla-tokens-general">
-        <thead>
-            <tr>
-                <th>Token</th>
-                <th>Descripción</th>
-                <th>Ejemplo</th>
-                <th>Expresión regular</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for t in tokens_generales %}
-            <tr>
-                <td class="token-name">{{ t.token }}</td>
-                <td>{{ t.descripcion }}</td>
-                <td class="ejemplo-celda">{{ t.ejemplo }}</td>
-                <td><span class="regex-celda">{{ t.regex }}</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-{% endif %}
-
-</div>
-
-</div>
-
-<script>
-    function renderGraph(containerId, dot) {
-        if (!dot) return;
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-
-        try {
-            const viz = new Viz();
-            viz.renderSVGElement(dot)
-                .then(function(element) {
-                    container.appendChild(element);
-                })
-                .catch(function(error) {
-                    console.error(error);
-                    container.innerHTML = '<p style="color:#c0392b;">Error al renderizar el diagrama.</p>';
-                });
-        } catch (e) {
-            container.innerHTML = '<p style="color:#c0392b;">Error al renderizar el diagrama.</p>';
-        }
+    mapa = {
+        "dni": "ID_DNI",
+        "edad": "ID_EDAD",
+        "nombre": "ID_NOMBRE",
+        "apellido": "ID_APELLIDO",
+        "diagnostico": "ID_DIAGNOSTICO",
+        "fecha": "ID_FECHA",
+        "hora": "ID_HORA",
+        "hospital_clinica": "ID_HOSPITAL",
+        "hospital_clínica": "ID_HOSPITAL",
+        "laboratorio": "ID_LABORATORIO",
+        "salon": "ID_SALON",
+        "examenes": "ID_EXAMENES",
+        "enfermera_medico": "ID_PERSONAL",
+        "tipo_sangre": "ID_TIPO_SANGRE"
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        renderGraph('graph-nfa', `{{ arbol_dot | replace('\n','\\n') if arbol_dot else '' }}`);
-        renderGraph('graph-afd', `{{ afd_dot | replace('\n','\\n') if afd_dot else '' }}`);
-    });
-</script>
+    return mapa.get(campo, "ID_CAMPO")
 
-<!-- ================= CATÁLOGO MÉDICO ================= -->
-<div class="catalogo">
 
-<h2>📚 Catálogo Médico</h2>
+# =========================
+# TOKENIZADOR (MEJORADO)
+# =========================
+def tokenizar_valor(campo, valor):
+    tokens = []
 
-<h3>🧪 Diagnósticos (CIE-10)</h3>
-<ul>
-{% for k,v in catalogo.diagnosticos.items() %}
-<li><b>{{ k }}</b> - {{ v }}</li>
-{% endfor %}
-</ul>
+    tipo_token = tipo_id_campo(campo)
+    regex = LEXEMAS_REGEX.get(tipo_token, "")
 
-<h3>🩸 Tipos de sangre</h3>
-<ul>
-{% for s in catalogo.sangre %}
-<li>{{ s }}</li>
-{% endfor %}
-</ul>
+    valido = bool(re.fullmatch(regex, valor.strip())) if regex else True
 
-<h3>🏥 Salas válidas</h3>
-<ul>
-{% for s in catalogo.salas %}
-<li>{{ s }}</li>
-{% endfor %}
-</ul>
+    tokens.append({
+        "tipo": tipo_token,
+        "valor": campo,
+        "regex": regex,
+        "estados": ["q0", "qf"]
+    })
 
-</div>
+    tokens.append({
+        "tipo": "VALOR_" + tipo_token,
+        "valor": valor.strip(),
+        "regex": regex,
+        "estado": "OK" if valido else "ERROR",
+        "estados": ["q0", "qf"] if valido else ["q0", "q_error"]
+    })
 
-<!-- ================= RESULTADO ================= -->
-{% if resultado %}
-<div class="catalogo">
-    <h2>✔ Resultado</h2>
-    <pre>{{ resultado }}</pre>
-</div>
-{% endif %}
+    return tokens
 
-</body>
-</html>
+
+# =========================
+# PARSER TXT
+# =========================
+def parsear_archivo_txt(contenido):
+    datos = {}
+    patron = re.compile(r'^\s*([^:]+?)\s*:\s*(.*)$')
+
+    for linea in contenido.splitlines():
+        if not linea.strip():
+            continue
+
+        m = patron.match(linea)
+        if not m:
+            raise ValueError(f"Linea invalida: {linea}")
+
+        campo = m.group(1).strip().lower()
+        valor = m.group(2).strip()
+        datos[campo] = valor
+
+    return datos
+
+
+def generar_dot_afd_nfa(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];"
+    ]
+
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = tokens[0]["tipo"]
+        valor = tokens[1]["valor"].replace('"', '\\"')
+        label = f"{token_label}\\n{valor}"
+        lineas.append(f"  q0 -> q{index} [label=\"{label}\"];")
+        lineas.append(f"  q{index} -> qf [label=\"ε\"];")
+
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
+def generar_dot_afd(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];"
+    ]
+
+    acumulado = []
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = tokens[0]["tipo"]
+        valor = tokens[1]["valor"].replace('"', '\\"')
+        label = f"{token_label}\\n{valor}"
+        lineas.append(f"  q{index-1} -> q{index} [label=\"{label}\"];")
+        acumulado.append(label)
+
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
+# =========================
+# RUTA PRINCIPAL
+# =========================
+@app.route("/", methods=["GET", "POST"])
+def home():
+
+    resultado = None
+    mensaje_error_general = None
+    tokens_por_campo = None
+    arbol_dot = None
+    afd_dot = None
+
+    catalogo = {
+        "diagnosticos": DICCIONARIO_ENFERMEDADES,
+        "sangre": TIPOS_SANGRE_VALIDOS,
+        "salas": [
+            "MI-P1-101",
+            "CIR-P2-210",
+            "PED-P3-305",
+            "GO-P1-103"
+        ]
+    }
+
+    if request.method == "POST":
+        texto = request.form.get("texto", "").strip()
+        archivo = request.files.get("archivo")
+
+        try:
+            if texto:
+                datos = parsear_archivo_txt(texto)
+                tokens_por_campo = {}
+
+                for campo, valor in datos.items():
+                    tokens_por_campo[campo] = tokenizar_valor(campo, valor)
+
+                arbol_dot = generar_dot_afd_nfa(tokens_por_campo)
+                afd_dot = generar_dot_afd(tokens_por_campo)
+                resultado = {"exito": True, "datos": datos, "modo": "texto"}
+
+            elif archivo and archivo.filename:
+                contenido = archivo.read().decode("utf-8")
+                datos = parsear_archivo_txt(contenido)
+                tokens_por_campo = {}
+
+                for campo, valor in datos.items():
+                    tokens_por_campo[campo] = tokenizar_valor(campo, valor)
+
+                resultado = {"exito": True, "datos": datos, "modo": "archivo"}
+
+            else:
+                mensaje_error_general = "Debes ingresar texto o cargar un archivo .txt."
+
+        except Exception as e:
+            mensaje_error_general = str(e)
+
+    mostrar_tabla_general = tokens_por_campo is None
+
+    return render_template(
+        "index.html",
+        resultado=resultado,
+        mensaje_error_general=mensaje_error_general,
+        tokens_por_campo=tokens_por_campo,
+        arbol_dot=arbol_dot,
+        afd_dot=afd_dot,
+        mostrar_tabla_general=mostrar_tabla_general,
+        catalogo=catalogo,
+        tokens_generales=TOKENS_GENERALES
+    )
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
