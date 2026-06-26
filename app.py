@@ -68,7 +68,8 @@ TOKENS_GENERALES = [
 # MAPEO DE CAMPOS
 # =========================
 def tipo_id_campo(campo):
-    campo = campo.lower()
+    campo = campo.lower().strip()
+    campo = campo.replace(' ', '_').replace('/', '_').replace('-', '_')
 
     mapa = {
         "dni": "ID_DNI",
@@ -79,6 +80,7 @@ def tipo_id_campo(campo):
         "fecha": "ID_FECHA",
         "hora": "ID_HORA",
         "hospital_clinica": "ID_HOSPITAL",
+        "hospital_clínica": "ID_HOSPITAL",
         "laboratorio": "ID_LABORATORIO",
         "salon": "ID_SALON",
         "examenes": "ID_EXAMENES",
@@ -140,6 +142,49 @@ def parsear_archivo_txt(contenido):
     return datos
 
 
+def generar_dot_afd_nfa(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];"
+    ]
+
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = tokens[0]["tipo"]
+        valor = tokens[1]["valor"].replace('"', '\\"')
+        label = f"{token_label}\\n{valor}"
+        lineas.append(f"  q0 -> q{index} [label=\"{label}\"];")
+        lineas.append(f"  q{index} -> qf [label=\"ε\"];")
+
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
+def generar_dot_afd(tokens_por_campo):
+    lineas = [
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];"
+    ]
+
+    acumulado = []
+    for index, (campo, tokens) in enumerate(tokens_por_campo.items(), start=1):
+        token_label = tokens[0]["tipo"]
+        valor = tokens[1]["valor"].replace('"', '\\"')
+        label = f"{token_label}\\n{valor}"
+        lineas.append(f"  q{index-1} -> q{index} [label=\"{label}\"];")
+        acumulado.append(label)
+
+    lineas.append("}")
+    return "\n".join(lineas)
+
+
 # =========================
 # RUTA PRINCIPAL
 # =========================
@@ -150,6 +195,7 @@ def home():
     mensaje_error_general = None
     tokens_por_campo = None
     arbol_dot = None
+    afd_dot = None
 
     catalogo = {
         "diagnosticos": DICCIONARIO_ENFERMEDADES,
@@ -163,25 +209,38 @@ def home():
     }
 
     if request.method == "POST":
+        texto = request.form.get("texto", "").strip()
         archivo = request.files.get("archivo")
 
-        if archivo:
-            try:
-                contenido = archivo.read().decode("utf-8")
-                datos = parsear_archivo_txt(contenido)
-
+        try:
+            if texto:
+                datos = parsear_archivo_txt(texto)
                 tokens_por_campo = {}
 
                 for campo, valor in datos.items():
                     tokens_por_campo[campo] = tokenizar_valor(campo, valor)
 
-                # árbol simple (NO tocamos tu AFD/AFN original)
-                arbol_dot = "digraph { PACIENTE -> DATOS }"
+                arbol_dot = generar_dot_afd_nfa(tokens_por_campo)
+                afd_dot = generar_dot_afd(tokens_por_campo)
+                resultado = {"exito": True, "datos": datos, "modo": "texto"}
 
-                resultado = {"exito": True, "datos": datos}
+            elif archivo and archivo.filename:
+                contenido = archivo.read().decode("utf-8")
+                datos = parsear_archivo_txt(contenido)
+                tokens_por_campo = {}
 
-            except Exception as e:
-                mensaje_error_general = str(e)
+                for campo, valor in datos.items():
+                    tokens_por_campo[campo] = tokenizar_valor(campo, valor)
+
+                resultado = {"exito": True, "datos": datos, "modo": "archivo"}
+
+            else:
+                mensaje_error_general = "Debes ingresar texto o cargar un archivo .txt."
+
+        except Exception as e:
+            mensaje_error_general = str(e)
+
+    mostrar_tabla_general = tokens_por_campo is None
 
     return render_template(
         "index.html",
@@ -189,6 +248,8 @@ def home():
         mensaje_error_general=mensaje_error_general,
         tokens_por_campo=tokens_por_campo,
         arbol_dot=arbol_dot,
+        afd_dot=afd_dot,
+        mostrar_tabla_general=mostrar_tabla_general,
         catalogo=catalogo,
         tokens_generales=TOKENS_GENERALES
     )
