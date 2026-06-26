@@ -300,6 +300,10 @@ Tipo de sangre: A+
                     <div class="graph-label">AFD</div>
                     <div id="graph-afd-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afd-{{ outer_index }}-{{ loop.index0 }}"></div>
                     <script type="application/json" id="dot-afd-{{ outer_index }}-{{ loop.index0 }}">{{ t.afd_dot | tojson }}</script>
+
+                    <div class="graph-label">Árbol sintáctico</div>
+                    <div id="graph-sintactico-{{ outer_index }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-sintactico-{{ outer_index }}-{{ loop.index0 }}"></div>
+                    <script type="application/json" id="dot-sintactico-{{ outer_index }}-{{ loop.index0 }}">{{ t.sintactico_dot | tojson }}</script>
                 </div>
 
             </div>
@@ -401,14 +405,6 @@ Tipo de sangre: A+
 </ul>
 
 </div>
-
-<!-- ================= RESULTADO ================= -->
-{% if resultado %}
-<div class="catalogo">
-    <h2>✔ Resultado</h2>
-    <pre>{{ resultado }}</pre>
-</div>
-{% endif %}
 
 </body>
 </html>
