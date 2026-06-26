@@ -160,8 +160,8 @@ def tokenizar_valor(campo, valor):
     valido = lex_valido and sem_valido
     graph_label = f"{tipo_token}\n{valor_str}"
 
-    afn_dot = generar_dot_afn_token(graph_label)
-    afd_dot = generar_dot_afd_token(graph_label)
+    afn_dot = generar_dot_afn_token(graph_label, valido)
+    afd_dot = generar_dot_afd_token(graph_label, valido)
     sintactico_dot = generar_dot_sintactico_token(tipo_token, valor_str)
 
     token_data = {
@@ -209,35 +209,60 @@ def parsear_archivo_txt(contenido):
     return datos
 
 
-def generar_dot_afn_token(label):
+def generar_dot_afn_token(label, valido=True):
     label = label.replace('"', '\\"')
+    if valido:
+        return "\n".join([
+            "digraph G {",
+            "  rankdir=LR;",
+            "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+            "  q0 [label=\"q0\"];",
+            "  q1 [label=\"q1\"];",
+            "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+            "  edge [fontname=\"Courier\"];",
+            f"  q0 -> q1 [label=\"{label}\"];",
+            "  q0 -> qf [label=\"ε\"];",
+            "  q1 -> qf [label=\"ε\"];",
+            "}"
+        ])
+
     return "\n".join([
         "digraph G {",
         "  rankdir=LR;",
         "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
         "  q0 [label=\"q0\"];",
-        "  q1 [label=\"q1\"];",
+        "  q_error [label=\"q_error\", shape=doublecircle, style=filled, fillcolor=\"#fdecea\", color=\"#c0392b\"];",
         "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
         "  edge [fontname=\"Courier\"];",
-        f"  q0 -> q1 [label=\"{label}\"];",
-        "  q0 -> qf [label=\"ε\"];",
-        "  q1 -> qf [label=\"ε\"];",
+        f"  q0 -> q_error [label=\"{label}\"];",
         "}"
     ])
 
 
-def generar_dot_afd_token(label):
+def generar_dot_afd_token(label, valido=True):
     label = label.replace('"', '\\"')
+    if valido:
+        return "\n".join([
+            "digraph G {",
+            "  rankdir=LR;",
+            "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+            "  q0 [label=\"q0\"];",
+            "  q1 [label=\"q1\"];",
+            "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+            "  edge [fontname=\"Courier\"];",
+            f"  q0 -> q1 [label=\"{label}\"];",
+            "  q1 -> qf [label=\"ε\"];",
+            "}"
+        ])
+
     return "\n".join([
         "digraph G {",
         "  rankdir=LR;",
         "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
         "  q0 [label=\"q0\"];",
-        "  q1 [label=\"q1\"];",
-        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  q_error [label=\"q_error\", shape=doublecircle, style=filled, fillcolor=\"#fdecea\", color=\"#c0392b\"];",
         "  edge [fontname=\"Courier\"];",
-        f"  q0 -> q1 [label=\"{label}\"];",
-        "  q1 -> qf [label=\"ε\"];",
+        f"  q0 -> q_error [label=\"{label}\"];",
         "}"
     ])
 
@@ -331,7 +356,6 @@ def generar_dot_afd(tokens_por_campo):
 
     lineas.append("}")
     return "\n".join(lineas)
-
 
 # =========================
 # RUTA PRINCIPAL
