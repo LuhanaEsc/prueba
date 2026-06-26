@@ -206,8 +206,16 @@
 <div class="columna-izquierda">
 
 <form method="POST" enctype="multipart/form-data">
-    <label>Archivo .txt</label>
-    <input type="file" name="archivo" required>
+    <div class="campo">
+        <label>Ingresar texto</label>
+        <textarea name="texto" rows="12" placeholder="Pega aquí tu texto en formato Nombre: Juan..." style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; resize:vertical;"></textarea>
+    </div>
+
+    <div class="campo">
+        <label>O cargar archivo .txt</label>
+        <input type="file" name="archivo">
+    </div>
+
     <button>Compilar</button>
 </form>
 
@@ -239,7 +247,7 @@ Tipo de sangre: A+
 
 {% if tokens_por_campo %}
 
-    <!-- Archivo cargado: mostrar tokens del archivo -->
+    <!-- Texto o archivo procesado: mostrar tokens -->
     {% for campo, tokens in tokens_por_campo.items() %}
 
         <h3>📍 {{ campo }}</h3>
@@ -264,6 +272,20 @@ Tipo de sangre: A+
         {% endfor %}
 
     {% endfor %}
+
+    {% if arbol_dot %}
+    <div class="fase">
+        <h2>🧠 AFDN / AFN Generado</h2>
+        <div id="graph-nfa"></div>
+    </div>
+    {% endif %}
+
+    {% if afd_dot %}
+    <div class="fase">
+        <h2>✅ AFD Generado</h2>
+        <div id="graph-afd"></div>
+    </div>
+    {% endif %}
 
 {% else %}
 
@@ -299,6 +321,33 @@ Tipo de sangre: A+
 </div>
 
 </div>
+
+<script>
+    function renderGraph(containerId, dot) {
+        if (!dot) return;
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        try {
+            const viz = new Viz();
+            viz.renderSVGElement(dot)
+                .then(function(element) {
+                    container.appendChild(element);
+                })
+                .catch(function(error) {
+                    console.error(error);
+                    container.innerHTML = '<p style="color:#c0392b;">Error al renderizar el diagrama.</p>';
+                });
+        } catch (e) {
+            container.innerHTML = '<p style="color:#c0392b;">Error al renderizar el diagrama.</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        renderGraph('graph-nfa', `{{ arbol_dot | replace('\n','\\n') if arbol_dot else '' }}`);
+        renderGraph('graph-afd', `{{ afd_dot | replace('\n','\\n') if afd_dot else '' }}`);
+    });
+</script>
 
 <!-- ================= CATÁLOGO MÉDICO ================= -->
 <div class="catalogo">
