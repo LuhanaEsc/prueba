@@ -45,6 +45,26 @@ LEXEMAS_REGEX = {
 
 
 # =========================
+# TABLA DE TOKENS GENERAL
+# =========================
+TOKENS_GENERALES = [
+    {"token": "ID_NOMBRE",      "descripcion": "Nombre del paciente",          "ejemplo": "Juan",          "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "ID_APELLIDO",    "descripcion": "Apellido del paciente",         "ejemplo": "Perez",         "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+$"},
+    {"token": "ID_DNI",         "descripcion": "Documento de identidad (8 dígitos)", "ejemplo": "12345678", "regex": r"^\d{8}$"},
+    {"token": "ID_EDAD",        "descripcion": "Edad del paciente (1-3 dígitos)", "ejemplo": "30",          "regex": r"^\d{1,3}$"},
+    {"token": "ID_DIAGNOSTICO", "descripcion": "Código CIE-10",                 "ejemplo": "J00",           "regex": r"^[A-Z]\d{2}$"},
+    {"token": "ID_FECHA",       "descripcion": "Fecha en formato YYYY-MM-DD",   "ejemplo": "2025-06-10",    "regex": r"^\d{4}-\d{2}-\d{2}$"},
+    {"token": "ID_HORA",        "descripcion": "Hora en formato HH:MM",         "ejemplo": "09:15",         "regex": r"^([01]\d|2[0-3]):[0-5]\d$"},
+    {"token": "ID_HOSPITAL",    "descripcion": "Nombre de hospital o clínica",  "ejemplo": "Clinica Central","regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.\-]+$"},
+    {"token": "ID_LABORATORIO", "descripcion": "Nombre del laboratorio",        "ejemplo": "Lab Uno",       "regex": r"^[A-Za-z0-9\s\-]+$"},
+    {"token": "ID_SALON",       "descripcion": "Código de sala (AREA-PX-NUM)",  "ejemplo": "MI-P2-103",     "regex": r"^(MI|CIR|PED|GO)-P\d{1,2}-\d{1,3}$"},
+    {"token": "ID_EXAMENES",    "descripcion": "Nombre del examen médico",      "ejemplo": "Hemograma",     "regex": r"^.+$"},
+    {"token": "ID_PERSONAL",    "descripcion": "Nombre del médico o enfermera", "ejemplo": "Dra Lopez",     "regex": r"^[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s\.]+$"},
+    {"token": "ID_TIPO_SANGRE", "descripcion": "Tipo de sangre ABO/Rh",        "ejemplo": "A+",            "regex": r"^(A|B|AB|O)[+-]$"},
+]
+
+
+# =========================
 # MAPEO DE CAMPOS
 # =========================
 def tipo_id_campo(campo):
@@ -169,7 +189,8 @@ def home():
         mensaje_error_general=mensaje_error_general,
         tokens_por_campo=tokens_por_campo,
         arbol_dot=arbol_dot,
-        catalogo=catalogo
+        catalogo=catalogo,
+        tokens_generales=TOKENS_GENERALES
     )
 
 
