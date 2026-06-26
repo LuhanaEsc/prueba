@@ -133,6 +133,62 @@
             font-size: 0.75rem;
         }
 
+        /* ===== TABLA DE TOKENS GENERAL ===== */
+        .tabla-tokens-general {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            margin-top: 10px;
+        }
+
+        .tabla-tokens-general thead tr {
+            background: #1e466e;
+            color: white;
+        }
+
+        .tabla-tokens-general th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .tabla-tokens-general td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e0e6ed;
+            vertical-align: top;
+        }
+
+        .tabla-tokens-general tbody tr:nth-child(even) {
+            background: #f4f7fb;
+        }
+
+        .tabla-tokens-general tbody tr:hover {
+            background: #e8f4e8;
+        }
+
+        .tabla-tokens-general .token-name {
+            font-family: monospace;
+            font-weight: bold;
+            color: #1e466e;
+            white-space: nowrap;
+        }
+
+        .tabla-tokens-general .regex-celda {
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #555;
+            background: #eef7ff;
+            padding: 3px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .tabla-tokens-general .ejemplo-celda {
+            font-family: monospace;
+            color: #27ae60;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 
@@ -183,33 +239,61 @@ Tipo de sangre: A+
 
 {% if tokens_por_campo %}
 
-{% for campo, tokens in tokens_por_campo.items() %}
+    <!-- Archivo cargado: mostrar tokens del archivo -->
+    {% for campo, tokens in tokens_por_campo.items() %}
 
-    <h3>📍 {{ campo }}</h3>
+        <h3>📍 {{ campo }}</h3>
 
-    {% for t in tokens %}
+        {% for t in tokens %}
 
-        <div class="afd-item">
+            <div class="afd-item">
 
-            <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
-            <b>Valor:</b> {{ t.valor }}<br>
+                <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
+                <b>Valor:</b> {{ t.valor }}<br>
 
-            {% if t.regex %}
-            <div class="regex-box">
-                Regex: {{ t.regex }}
+                {% if t.regex %}
+                <div class="regex-box">
+                    Regex: {{ t.regex }}
+                </div>
+                {% endif %}
+
+                <b>Estados:</b> {{ t.estados | join(" → ") }}
+
             </div>
-            {% endif %}
 
-            <b>Estados:</b> {{ t.estados | join(" → ") }}
-
-        </div>
+        {% endfor %}
 
     {% endfor %}
 
-{% endfor %}
-
 {% else %}
-<p>No hay datos cargados.</p>
+
+    <!-- Sin archivo: mostrar tabla general de tokens -->
+    <p style="color:#555; margin-bottom:14px;">
+        Carga un archivo <code>.txt</code> para ver el análisis léxico de tus datos.
+        A continuación se muestran todos los tokens reconocidos por el compilador:
+    </p>
+
+    <table class="tabla-tokens-general">
+        <thead>
+            <tr>
+                <th>Token</th>
+                <th>Descripción</th>
+                <th>Ejemplo</th>
+                <th>Expresión regular</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tokens_generales %}
+            <tr>
+                <td class="token-name">{{ t.token }}</td>
+                <td>{{ t.descripcion }}</td>
+                <td class="ejemplo-celda">{{ t.ejemplo }}</td>
+                <td><span class="regex-celda">{{ t.regex }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 {% endif %}
 
 </div>
