@@ -107,6 +107,12 @@
             border-radius: 8px;
         }
 
+        .afd-item.error {
+            background: #fdecea;
+            border-left-color: #c0392b;
+            border: 1px solid #e6b8b3;
+        }
+
         .graph-container {
             width: 100%;
             min-height: 180px;
@@ -117,6 +123,11 @@
             margin-top: 10px;
             overflow-x: auto;
             overflow-y: hidden;
+        }
+
+        .graph-container.error {
+            border-color: #c0392b;
+            background: #fff1f0;
         }
 
         .graph-container svg {
@@ -224,6 +235,16 @@
             border: 1px solid #dcdcdc;
             background: #fffef2;
             margin-bottom: 20px;
+        }
+
+        .validacion-resumen.validacion-ok {
+            border-color: #27ae60;
+            background: #ebf8f2;
+        }
+
+        .validacion-resumen.validacion-error {
+            border-color: #c0392b;
+            background: #fdecea;
         }
 
         .validacion-ok {
@@ -347,7 +368,7 @@ Tipo de sangre: A+
 
         <h3>📍 {{ campo }}</h3>
 
-        <div class="afd-item">
+        <div class="afd-item {{ 'error' if t.estado == 'ERROR' else '' }}">
 
             <b>Token:</b> <span class="tag">{{ t.tipo }}</span><br>
             <b>Valor:</b> {{ t.valor }}<br>
@@ -362,15 +383,15 @@ Tipo de sangre: A+
 
             <div class="graph-block">
                 <div class="graph-label">AFN</div>
-                <div id="graph-afn-{{ outer_index }}" class="graph-container" data-script-id="dot-afn-{{ outer_index }}"></div>
+                <div id="graph-afn-{{ outer_index }}" class="graph-container {{ 'error' if t.estado == 'ERROR' else '' }}" data-script-id="dot-afn-{{ outer_index }}"></div>
                 <script type="application/json" id="dot-afn-{{ outer_index }}">{{ t.afn_dot | tojson }}</script>
 
                 <div class="graph-label">AFD</div>
-                <div id="graph-afd-{{ outer_index }}" class="graph-container" data-script-id="dot-afd-{{ outer_index }}"></div>
+                <div id="graph-afd-{{ outer_index }}" class="graph-container {{ 'error' if t.estado == 'ERROR' else '' }}" data-script-id="dot-afd-{{ outer_index }}"></div>
                 <script type="application/json" id="dot-afd-{{ outer_index }}">{{ t.afd_dot | tojson }}</script>
 
                 <div class="graph-label">Árbol sintáctico</div>
-                <div id="graph-sintactico-{{ outer_index }}" class="graph-container" data-script-id="dot-sintactico-{{ outer_index }}"></div>
+                <div id="graph-sintactico-{{ outer_index }}" class="graph-container {{ 'error' if t.estado == 'ERROR' else '' }}" data-script-id="dot-sintactico-{{ outer_index }}"></div>
                 <script type="application/json" id="dot-sintactico-{{ outer_index }}">{{ t.sintactico_dot | tojson }}</script>
             </div>
 
@@ -379,8 +400,8 @@ Tipo de sangre: A+
     {% endfor %}
 
     {% if validacion_resumen %}
-    <div class="fase validacion-resumen">
-        <h2>✅ Resultado de validación final</h2>
+    <div class="fase validacion-resumen {{ 'validacion-ok' if validacion_resumen.valido else 'validacion-error' }}">
+        <h2>{{ '✅ Resultado de validación final' if validacion_resumen.valido else '❌ Resultado de validación final' }}</h2>
         <p class="{{ 'validacion-ok' if validacion_resumen.valido else 'validacion-error' }}" style="font-size:1rem; margin-bottom:12px;">
             {{ validacion_resumen.mensaje }}
         </p>
@@ -391,6 +412,9 @@ Tipo de sangre: A+
             <div class="validacion-campo">
                 <div>
                     <strong>{{ campo.label }}</strong>: {{ campo.valor }}
+                    {% if campo.error_mensaje %}
+                        <div style="font-size:0.9rem; color:#c0392b; margin-top:4px;">{{ campo.error_mensaje }}</div>
+                    {% endif %}
                 </div>
                 <div class="validacion-estado {{ 'validacion-ok' if campo.valido else 'validacion-error' }}">
                     {{ campo.estado }}
@@ -488,34 +512,6 @@ Tipo de sangre: A+
         });
     });
 </script>
-
-<!-- ================= CATÁLOGO MÉDICO ================= -->
-<div class="catalogo">
-
-<h2>📚 Catálogo Médico</h2>
-
-<h3>🧪 Diagnósticos (CIE-10)</h3>
-<ul>
-{% for k,v in catalogo.diagnosticos.items() %}
-<li><b>{{ k }}</b> - {{ v }}</li>
-{% endfor %}
-</ul>
-
-<h3>🩸 Tipos de sangre</h3>
-<ul>
-{% for s in catalogo.sangre %}
-<li>{{ s }}</li>
-{% endfor %}
-</ul>
-
-<h3>🏥 Salas válidas</h3>
-<ul>
-{% for s in catalogo.salas %}
-<li>{{ s }}</li>
-{% endfor %}
-</ul>
-
-</div>
 
 </body>
 </html>
