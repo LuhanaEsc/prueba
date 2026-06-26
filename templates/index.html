@@ -107,6 +107,26 @@
             border-radius: 8px;
         }
 
+        .graph-container {
+            min-height: 180px;
+            background: #ffffff;
+            border: 1px solid #dfe3e6;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .graph-label {
+            display: inline-block;
+            margin-top: 14px;
+            font-weight: 700;
+            color: #1e466e;
+        }
+
+        .graph-block {
+            margin-top: 12px;
+        }
+
         .catalogo {
             background: #ffffff;
             border-radius: 16px;
@@ -207,13 +227,8 @@
 
 <form method="POST" enctype="multipart/form-data">
     <div class="campo">
-        <label>Ingresar texto</label>
-        <textarea name="texto" rows="12" placeholder="Pega aquí tu texto en formato Nombre: Juan..." style="width:100%; padding:12px; border:1px solid #ccc; border-radius:8px; resize:vertical;"></textarea>
-    </div>
-
-    <div class="campo">
-        <label>O cargar archivo .txt</label>
-        <input type="file" name="archivo">
+        <label>Cargar archivo .txt</label>
+        <input type="file" name="archivo" required>
     </div>
 
     <button>Compilar</button>
@@ -267,31 +282,27 @@ Tipo de sangre: A+
 
                 <b>Estados:</b> {{ t.estados | join(" → ") }}
 
+                <div class="graph-block">
+                    <div class="graph-label">AFN</div>
+                    <div id="graph-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}"></div>
+                    <script type="application/json" id="dot-afn-{{ loop.parent.index0 }}-{{ loop.index0 }}">{{ t.afn_dot | tojson }}</script>
+
+                    <div class="graph-label">AFD</div>
+                    <div id="graph-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}" class="graph-container" data-script-id="dot-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}"></div>
+                    <script type="application/json" id="dot-afd-{{ loop.parent.index0 }}-{{ loop.index0 }}">{{ t.afd_dot | tojson }}</script>
+                </div>
+
             </div>
 
         {% endfor %}
 
     {% endfor %}
 
-    {% if arbol_dot %}
-    <div class="fase">
-        <h2>🧠 AFDN / AFN Generado</h2>
-        <div id="graph-nfa"></div>
-    </div>
-    {% endif %}
-
-    {% if afd_dot %}
-    <div class="fase">
-        <h2>✅ AFD Generado</h2>
-        <div id="graph-afd"></div>
-    </div>
-    {% endif %}
-
 {% elif mostrar_tabla_general %}
 
     <!-- Vista inicial: mostrar tabla general de tokens -->
     <p style="color:#555; margin-bottom:14px;">
-        Ingresa texto o carga un archivo <code>.txt</code> para ver el análisis léxico de tus datos.
+        Carga un archivo <code>.txt</code> para ver el análisis léxico de tus datos.
         A continuación se muestran todos los tokens reconocidos por el compilador:
     </p>
 
@@ -344,8 +355,12 @@ Tipo de sangre: A+
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        renderGraph('graph-nfa', `{{ arbol_dot | replace('\n','\\n') if arbol_dot else '' }}`);
-        renderGraph('graph-afd', `{{ afd_dot | replace('\n','\\n') if afd_dot else '' }}`);
+        document.querySelectorAll('.graph-container').forEach(function(el) {
+            const script = document.getElementById(el.dataset.scriptId);
+            if (!script) return;
+            const dot = JSON.parse(script.textContent || 'null');
+            if (dot) renderGraph(el.id, dot);
+        });
     });
 </script>
 
