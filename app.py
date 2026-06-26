@@ -99,14 +99,21 @@ def tokenizar_valor(campo, valor):
 
     tipo_token = tipo_id_campo(campo)
     regex = LEXEMAS_REGEX.get(tipo_token, "")
-
     valido = bool(re.fullmatch(regex, valor.strip())) if regex else True
+    label = regex.strip('^$') if regex else valor.strip()
+    label = label if label else valor.strip()
+    graph_label = f"{tipo_token}\n{label}"
+
+    afn_dot = generar_dot_afn_token(graph_label)
+    afd_dot = generar_dot_afd_token(graph_label)
 
     tokens.append({
         "tipo": tipo_token,
         "valor": campo,
         "regex": regex,
-        "estados": ["q0", "qf"]
+        "estados": ["q0", "qf"],
+        "afn_dot": afn_dot,
+        "afd_dot": afd_dot
     })
 
     tokens.append({
@@ -114,7 +121,9 @@ def tokenizar_valor(campo, valor):
         "valor": valor.strip(),
         "regex": regex,
         "estado": "OK" if valido else "ERROR",
-        "estados": ["q0", "qf"] if valido else ["q0", "q_error"]
+        "estados": ["q0", "qf"] if valido else ["q0", "q_error"],
+        "afn_dot": afn_dot,
+        "afd_dot": afd_dot
     })
 
     return tokens
@@ -140,6 +149,39 @@ def parsear_archivo_txt(contenido):
         datos[campo] = valor
 
     return datos
+
+
+def generar_dot_afn_token(label):
+    label = label.replace('"', '\\"')
+    return "\n".join([
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  q1 [label=\"q1\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];",
+        f"  q0 -> q1 [label=\"{label}\"];",
+        "  q0 -> qf [label=\"ε\"];",
+        "  q1 -> qf [label=\"ε\"];",
+        "}"
+    ])
+
+
+def generar_dot_afd_token(label):
+    label = label.replace('"', '\\"')
+    return "\n".join([
+        "digraph G {",
+        "  rankdir=LR;",
+        "  node [shape=circle, style=filled, fillcolor=\"#f8f9fa\", fontname=\"Arial\"];",
+        "  q0 [label=\"q0\"];",
+        "  q1 [label=\"q1\"];",
+        "  qf [label=\"qf\", shape=doublecircle, fillcolor=\"#dfe6ff\"];",
+        "  edge [fontname=\"Courier\"];",
+        f"  q0 -> q1 [label=\"{label}\"];",
+        "  q1 -> qf [label=\"ε\"];",
+        "}"
+    ])
 
 
 def generar_dot_afd_nfa(tokens_por_campo):
@@ -209,22 +251,10 @@ def home():
     }
 
     if request.method == "POST":
-        texto = request.form.get("texto", "").strip()
         archivo = request.files.get("archivo")
 
         try:
-            if texto:
-                datos = parsear_archivo_txt(texto)
-                tokens_por_campo = {}
-
-                for campo, valor in datos.items():
-                    tokens_por_campo[campo] = tokenizar_valor(campo, valor)
-
-                arbol_dot = generar_dot_afd_nfa(tokens_por_campo)
-                afd_dot = generar_dot_afd(tokens_por_campo)
-                resultado = {"exito": True, "datos": datos, "modo": "texto"}
-
-            elif archivo and archivo.filename:
+            if archivo and archivo.filename:
                 contenido = archivo.read().decode("utf-8")
                 datos = parsear_archivo_txt(contenido)
                 tokens_por_campo = {}
@@ -233,9 +263,8 @@ def home():
                     tokens_por_campo[campo] = tokenizar_valor(campo, valor)
 
                 resultado = {"exito": True, "datos": datos, "modo": "archivo"}
-
             else:
-                mensaje_error_general = "Debes ingresar texto o cargar un archivo .txt."
+                mensaje_error_general = "Debes cargar un archivo .txt para procesar los datos."
 
         except Exception as e:
             mensaje_error_general = str(e)
