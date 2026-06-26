@@ -156,8 +156,14 @@ def tokenizar_valor(campo, valor):
     tipo_token = tipo_id_campo(campo)
     regex = LEXEMAS_REGEX.get(tipo_token, "")
     valor_str = valor.strip()
+    # Campos desconocidos deben marcarse como error
+    if tipo_token == "id_campo":
+        lex_valido = False
+        sem_valido = False
+        sem_error = "Campo desconocido"
+        valido = False
     # Valores vacíos deben considerarse inválidos para campos esperados
-    if valor_str == "":
+    elif valor_str == "":
         lex_valido = False
         sem_valido = False
         sem_error = "Valor vacío"
@@ -298,11 +304,16 @@ def generar_dot_sintactico_general(tokens_por_campo):
         "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
         "  root [label=\"SINTAXIS GENERAL\"];"
     ]
-    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+    idx = 1
+    for campo, token in tokens_por_campo.items():
+        # Excluir campos desconocidos del árbol sintáctico general
+        if token.get("tipo") == "id_campo":
+            continue
         token_label = token["tipo"].replace('_', ' ').upper()
         valor = token["valor"].replace('"', '\\"')
-        lineas.append(f"  n{index} [label=\"{token_label}: {valor}\"];" )
-        lineas.append(f"  root -> n{index};")
+        lineas.append(f"  n{idx} [label=\"{token_label}: {valor}\"];" )
+        lineas.append(f"  root -> n{idx};")
+        idx += 1
     lineas.append("}")
     return "\n".join(lineas)
 
@@ -314,11 +325,16 @@ def generar_dot_semantico_general(tokens_por_campo):
         "  node [shape=box, style=filled, fillcolor=\"#ffffff\", fontname=\"Arial\"];",
         "  root [label=\"SEMANTICA GENERAL\"];"
     ]
-    for index, (campo, token) in enumerate(tokens_por_campo.items(), start=1):
+    idx = 1
+    for campo, token in tokens_por_campo.items():
+        # Excluir campos desconocidos del árbol semántico general
+        if token.get("tipo") == "id_campo":
+            continue
         estado = token.get("estado", "OK")
         token_label = token["tipo"].replace('_', ' ').upper()
-        lineas.append(f"  n{index} [label=\"{token_label}: {estado}\"];" )
-        lineas.append(f"  root -> n{index};")
+        lineas.append(f"  n{idx} [label=\"{token_label}: {estado}\"];" )
+        lineas.append(f"  root -> n{idx};")
+        idx += 1
     lineas.append("}")
     return "\n".join(lineas)
 
@@ -410,7 +426,10 @@ def home():
 
                     if token_data.get("estado") == "ERROR":
                         valido_completo = False
-                        if token_data.get("error_mensaje"):
+                        # Mensaje específico para campos desconocidos
+                        if token_data.get("tipo") == "id_campo":
+                            validacion_lines.append(f"Campo no esperado: '{campo}'")
+                        elif token_data.get("error_mensaje"):
                             validacion_lines.append(
                                 f"Campo '{campo}' con valor '{valor}': {token_data.get('error_mensaje')}"
                             )
@@ -425,6 +444,7 @@ def home():
                         "valido": token_data.get("estado") == "OK",
                         "estado": token_data.get("estado"),
                         "label": campo.replace('_', ' ').title(),
+                        "desconocido": token_data.get("tipo") == "id_campo",
                         "error_mensaje": token_data.get("error_mensaje")
                     })
 
