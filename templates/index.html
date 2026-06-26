@@ -108,12 +108,21 @@
         }
 
         .graph-container {
+            width: 100%;
             min-height: 180px;
             background: #ffffff;
             border: 1px solid #dfe3e6;
             border-radius: 12px;
             padding: 10px;
             margin-top: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .graph-container svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
         }
 
         .graph-label {
